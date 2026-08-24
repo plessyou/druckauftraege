@@ -1,0 +1,2218 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Siebdruckaufträge</title>
+<link rel="manifest" id="manifestLink">
+<link rel="apple-touch-icon" id="appleIcon">
+<meta name="theme-color" content="#f3f4f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Siebdruck">
+<meta name="description" content="Übersicht über Siebdruckaufträge – Motiv, Textil, Druckfarbe, Deadline, Bezahlung.">
+<style>
+  :root{
+    --stoff:#f3f4f1; --karte:#ffffff; --tinte:#23262b; --tinte-2:#5c6168; --linie:#dcded8;
+    --druck-blau:#37518f; --druck-gelb:#c99a3a; --druck-gruen:#4a7c59; --druck-grau:#a2a7ad;
+    --beere:#b03a48; --lila:#7a4fa3;
+    --radius:14px;
+    --schatten:0 1px 2px rgba(35,38,43,.06), 0 6px 18px rgba(35,38,43,.07);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--stoff); color:var(--tinte);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15.5px; line-height:1.45; padding-bottom:126px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+  button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--druck-blau); outline-offset:2px; border-radius:6px;
+  }
+
+  .kopf{padding:20px 18px 10px}
+  .kopf h1{margin:0; font-family:Georgia,'Times New Roman',serif; font-style:italic; font-weight:600; font-size:30px; letter-spacing:.2px}
+  .kopf .unterzeile{margin:2px 0 0; color:var(--tinte-2); font-size:13px}
+  .laufstich{height:0; border-top:2px dashed var(--druck-blau); opacity:.5; margin:12px 18px 0}
+
+  .chips{display:flex; gap:8px; padding:12px 18px 4px; overflow-x:auto; scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{
+    flex:0 0 auto; padding:7px 13px; border-radius:999px;
+    border:1px solid var(--linie); background:var(--karte);
+    font-size:13.5px; color:var(--tinte-2); white-space:nowrap;
+  }
+  .chip b{color:var(--tinte); font-weight:600}
+  .chip.aktiv{background:var(--tinte); border-color:var(--tinte); color:#fff}
+  .chip.aktiv b{color:#fff}
+  .werkzeuge{display:flex; gap:8px; padding:8px 18px 0}
+  .wz{
+    display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px;
+    border:1px solid var(--linie); background:transparent; font-size:12.5px; color:var(--tinte-2); white-space:nowrap;
+  }
+  .wz b{color:var(--tinte); font-weight:600}
+  .wz.stark{border-color:var(--druck-blau); color:var(--druck-blau)}
+
+  /* ── Ordner ───────────────────────────── */
+  .liste{padding:8px 18px 0}
+  .ordner{margin-bottom:6px}
+  .ordner-kopf{display:flex; align-items:baseline; gap:9px; padding:14px 2px 6px}
+  .ordner-titel{display:flex; align-items:baseline; gap:9px; flex:1; min-width:0; text-align:left}
+  .ordner-pfeil{flex:0 0 auto; font-size:11px; color:var(--tinte-2); width:12px}
+  .ordner-name{
+    font-family:Georgia,serif; font-style:italic; font-size:17px; font-weight:600;
+    flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .ordner-zahl{flex:0 0 auto; font-size:11.5px; color:var(--tinte-2)}
+  .ordner-mehr{flex:0 0 auto; padding:2px 8px; color:var(--tinte-2); font-size:17px; line-height:1}
+  .ordner-linie{height:0; border-top:1px dashed var(--linie); margin:0 2px 10px}
+  .ordner.erledigt .ordner-name, .ordner.erledigt .ordner-pfeil{color:var(--druck-gruen)}
+  .ordner-inhalt{display:flex; flex-direction:column; gap:12px; border-radius:12px; padding:2px}
+  .ordner-inhalt.drueber{outline:2px dashed var(--druck-blau); outline-offset:1px; background:#eaeef7}
+  .ordner-leer{
+    padding:16px 14px; border:1px dashed var(--linie); border-radius:12px;
+    font-size:13px; color:var(--tinte-2); text-align:center;
+  }
+
+  /* ── Karten ───────────────────────────── */
+  .karte{
+    display:flex; align-items:flex-start; width:100%;
+    background:var(--karte); border-radius:var(--radius); box-shadow:var(--schatten); overflow:hidden;
+  }
+  .karte.frisch{box-shadow:0 0 0 2px var(--druck-blau), var(--schatten)}
+  .karte.zieh-quelle{opacity:.35}
+  .karte.zieh{
+    position:fixed; z-index:70; pointer-events:none; opacity:.95;
+    box-shadow:0 12px 28px rgba(35,38,43,.28); transform:rotate(-1deg);
+  }
+  .farbstreifen{flex:0 0 9px; align-self:stretch; background:repeating-linear-gradient(-55deg, var(--g1) 0 3px, var(--g2) 3px 6px)}
+  .karte-spalte{flex:1; min-width:0; display:flex; flex-direction:column; align-self:stretch}
+  .karte-flaeche{flex:1; text-align:left; padding:12px 12px 10px 14px; min-width:0; display:block; width:100%}
+  .karte-flaeche:active{opacity:.7}
+  .person{font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:18.5px; font-weight:600; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .motiv{color:var(--tinte-2); font-size:14px; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .banderole{display:block; margin-top:7px; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--tinte-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .karte-fuss{display:flex; align-items:center; gap:6px; margin-top:9px; flex-wrap:wrap}
+  .meta{display:block; margin-top:8px; font-size:11.5px; color:var(--tinte-2); opacity:.8}
+  .marke{display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:3px 9px; border-radius:999px; background:var(--stoff); color:var(--tinte-2); white-space:nowrap}
+  .marke .punkt{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .marke.frist-warn{background:#f7e9d8; color:#8a5a17}
+  .marke.frist-rot{background:#f6e3e5; color:var(--beere); font-weight:600}
+  .marke.keine-frist{background:#f2ecf7; color:var(--lila); font-weight:600; border:1px dashed var(--lila)}
+  .thumb{flex:0 0 auto; width:92px; height:92px; margin:12px 12px 0 0; border-radius:10px; object-fit:contain; background:var(--stoff)}
+
+  .karte-aktion{display:flex; align-items:center; gap:8px; padding:8px 12px 10px 14px; border-top:1px dashed var(--linie); flex-wrap:wrap}
+  .akt-knopf{
+    display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border-radius:999px;
+    border:1px solid var(--linie); background:var(--karte); font-size:12.5px; color:var(--tinte-2); white-space:nowrap;
+  }
+  .akt-knopf:active{opacity:.55}
+  .akt-knopf .punkt{width:8px; height:8px; border-radius:50%; background:currentColor}
+  .akt-knopf.gezahlt{color:var(--druck-gruen); border-color:#bcd3c2; background:#f2f7f3; font-weight:600}
+  .akt-knopf.geschenk{color:var(--druck-blau); border-color:#c3cde4; background:#eef1f8; font-weight:600}
+  .mini-box{
+    flex:0 0 auto; width:18px; height:18px; border-radius:5px; border:2px solid var(--linie);
+    background:var(--karte); display:flex; align-items:center; justify-content:center;
+    font-size:11px; line-height:1; color:transparent;
+  }
+  .akt-knopf.gezahlt .mini-box{background:var(--druck-gruen); border-color:var(--druck-gruen); color:#fff}
+  .griff{max-width:52%; min-width:0; touch-action:none; cursor:grab}
+  .griff .punkte{flex:0 0 auto; letter-spacing:-1px; opacity:.6}
+  .griff .txt{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .betrag-rechts{margin-left:auto; font-size:12.5px; color:var(--tinte-2)}
+
+  .leer{padding:56px 30px; text-align:center; color:var(--tinte-2)}
+  .leer .rahmen{width:88px; height:88px; margin:0 auto 16px; border-radius:8px; border:3px solid #c8b089; display:flex; align-items:center; justify-content:center}
+  .leer .rahmen .innen{width:62px; height:62px; border-radius:3px; border:2px dashed var(--druck-blau); opacity:.55}
+  .leer p{margin:0 0 4px; font-size:15px}
+  .leer .klein{font-size:13px}
+
+  .fab{
+    position:fixed; right:18px; bottom:86px; z-index:20; width:58px; height:58px; border-radius:50%;
+    background:var(--druck-blau); color:#fff; font-size:30px; line-height:1;
+    box-shadow:0 6px 16px rgba(55,81,143,.4); display:flex; align-items:center; justify-content:center;
+  }
+  .fab:active{transform:scale(.95)}
+
+  /* ── Sheets ───────────────────────────── */
+  .sheet{position:fixed; inset:0; z-index:30; background:var(--stoff); display:none; flex-direction:column}
+  #sheetForm{z-index:40}
+  .sheet.offen{display:flex}
+  .sheet-kopf{display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--linie); background:var(--karte); position:sticky; top:0; z-index:2}
+  .sheet-kopf h2{margin:0; flex:1; font-family:Georgia,serif; font-style:italic; font-size:20px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .zurueck{font-size:15px; color:var(--druck-blau); font-weight:600; padding:6px 2px}
+  .sheet-body{flex:1; overflow-y:auto; padding:16px 18px 40px}
+
+  /* Blatt von unten */
+  .blatt{position:fixed; inset:0; z-index:45; display:none; align-items:flex-end; background:rgba(20,22,26,.42)}
+  .blatt.offen{display:flex}
+  .blatt-inhalt{width:100%; max-height:82vh; overflow-y:auto; background:var(--stoff); border-radius:18px 18px 0 0; padding:18px 18px 28px}
+  .blatt-inhalt h3{margin:0; font-family:Georgia,serif; font-style:italic; font-size:19px; font-weight:600}
+  .blatt-inhalt .klein{margin:2px 0 12px; font-size:12.5px; color:var(--tinte-2)}
+  .b-option{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    padding:12px 14px; border-radius:12px; background:var(--karte);
+    border:1px solid var(--linie); margin-top:8px; font-size:15px;
+  }
+  .b-option.aktiv{border-color:var(--druck-blau); color:var(--druck-blau); font-weight:600}
+  .b-option.warn{color:var(--beere); border-color:#e3c2c7}
+  .b-option .haken{margin-left:auto; color:var(--druck-blau)}
+  .b-neu{display:flex; gap:8px; margin-top:16px}
+  .b-neu input{flex:1; min-width:0; padding:11px 12px; border:1px solid var(--linie); border-radius:10px; font:inherit; background:var(--karte); color:var(--tinte)}
+  .b-neu button{flex:0 0 auto; padding:11px 16px; border-radius:10px; background:var(--druck-blau); color:#fff; font-weight:600}
+
+  /* ── Formular ─────────────────────────── */
+  .feld{margin-bottom:16px}
+  .feld label, .feld-titel{display:block; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--tinte-2); margin-bottom:6px}
+  .feld input[type=text], .feld input[type=date], .feld textarea{
+    width:100%; padding:11px 12px; font:inherit; color:var(--tinte);
+    background:var(--karte); border:1px solid var(--linie); border-radius:10px;
+  }
+  .feld textarea{resize:vertical; min-height:66px}
+  .feld-reihe{display:flex; gap:12px}
+  .feld-reihe .feld{flex:1; min-width:0}
+  .hinweis{font-size:12px; color:var(--tinte-2); margin-top:5px}
+
+  .wahl-chips{display:flex; flex-wrap:wrap; gap:7px}
+  .wahl-chip{
+    padding:8px 12px; border-radius:999px; border:1px solid var(--linie); background:var(--karte);
+    font-size:13.5px; color:var(--tinte-2); display:inline-flex; align-items:center; gap:6px;
+  }
+  .wahl-chip.aktiv{background:var(--wf, var(--tinte)); border-color:var(--wf, var(--tinte)); color:#fff; font-weight:600; border-style:solid}
+  .wahl-chip.sonst{border-style:dashed; color:var(--druck-blau)}
+
+  .status-schalter{display:flex; gap:6px; flex-wrap:wrap}
+  .status-knopf{
+    flex:1 1 0; padding:10px 4px; border-radius:10px; font-size:13px;
+    border:1px solid var(--linie); background:var(--karte); color:var(--tinte-2);
+    display:flex; align-items:center; justify-content:center; gap:7px; min-width:92px;
+  }
+  .status-knopf .punkt{width:9px; height:9px; border-radius:50%; background:var(--sf)}
+  .status-knopf.aktiv{background:var(--sf); border-color:var(--sf); color:#fff; font-weight:600}
+  .status-knopf.aktiv .punkt{background:#fff}
+
+  .foto-reihe{display:flex; gap:10px; flex-wrap:wrap}
+  .foto-kachel{position:relative; width:76px; height:76px}
+  .foto-kachel img{width:100%; height:100%; object-fit:cover; border-radius:10px; display:block}
+  .foto-x{position:absolute; top:-7px; right:-7px; width:24px; height:24px; border-radius:50%; background:var(--tinte); color:#fff; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center}
+  .foto-plus{width:76px; height:76px; border-radius:10px; border:2px dashed var(--druck-blau); color:var(--druck-blau); font-size:26px; display:flex; align-items:center; justify-content:center; background:var(--karte); opacity:.85}
+
+  .knopf{width:100%; padding:14px; border-radius:12px; font-size:16px; font-weight:600; background:var(--druck-blau); color:#fff; margin-top:6px}
+  .knopf.leise{background:var(--karte); color:var(--tinte); border:1px solid var(--linie); font-weight:500}
+  .knopf.rot{background:transparent; color:var(--beere); border:1px solid #e3c2c7}
+  .knopf:active{opacity:.85}
+
+  .detail-block{background:var(--karte); border-radius:var(--radius); box-shadow:var(--schatten); padding:14px 16px; margin-bottom:14px}
+  .d-zeile{display:flex; gap:12px; padding:7px 0; border-bottom:1px dashed var(--linie)}
+  .d-zeile:last-child{border-bottom:none}
+  .d-label{flex:0 0 108px; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--tinte-2); padding-top:2px}
+  .d-wert{flex:1; min-width:0; overflow-wrap:break-word; white-space:pre-line}
+  .d-wert.warnung{color:var(--lila); font-weight:600}
+  .detail-fotos{display:flex; gap:10px; flex-wrap:wrap}
+  .detail-fotos img{width:104px; height:104px; object-fit:cover; border-radius:10px}
+
+  .viewer{position:fixed; inset:0; z-index:50; background:rgba(20,22,26,.93); display:none; align-items:center; justify-content:center; padding:20px}
+  .viewer.offen{display:flex}
+  .viewer img{max-width:100%; max-height:100%; border-radius:8px}
+
+  .toast{
+    position:fixed; left:50%; bottom:156px; transform:translateX(-50%) translateY(20px);
+    background:var(--tinte); color:#fff; font-size:14px; padding:10px 18px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:80; max-width:86vw; text-align:center;
+  }
+  .toast.zeig{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* ── Bestand ──────────────────────────── */
+  #sheetLieferung{z-index:42}
+  .tabs{
+    position:fixed; left:0; right:0; bottom:0; z-index:25; display:flex; gap:6px;
+    background:var(--karte); border-top:1px solid var(--linie);
+    padding:6px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    box-shadow:0 -2px 14px rgba(35,38,43,.07);
+  }
+  .tab{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:8px 4px 5px; border-radius:12px; font-size:11.5px; color:var(--tinte-2); letter-spacing:.02em;
+  }
+  .tab .sym{position:relative; font-size:18px; line-height:1}
+  .tab.aktiv{background:var(--stoff); color:var(--druck-blau); font-weight:600}
+  .tab .melder{
+    position:absolute; top:-5px; right:-11px; min-width:16px; height:16px; padding:0 4px;
+    border-radius:999px; background:var(--beere); color:#fff; font-size:10px; font-weight:600;
+    line-height:16px; text-align:center;
+  }
+  .speicherband{
+    display:flex; align-items:center; gap:9px; width:calc(100% - 36px); margin:12px 18px 0;
+    padding:10px 13px; border-radius:12px; background:#f6e3e5; border:1px solid #e3c2c7;
+    color:var(--beere); font-size:13px; line-height:1.35; text-align:left;
+  }
+  .speicherband .pfeil{margin-left:auto; opacity:.7}
+  .lagerband{
+    margin:14px 14px 2px; padding:11px 0 12px; border-radius:16px;
+    background:#e9ece4; border:1px solid #d5dacd;
+  }
+  .lagerband-kopf{display:flex; align-items:baseline; gap:8px; width:100%; padding:0 14px 9px; text-align:left}
+  .lagerband-titel{font-size:11px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--druck-gruen)}
+  .lagerband-zahl{font-size:11.5px; color:var(--tinte-2)}
+  .lagerband-mehr{margin-left:auto; font-size:12px; color:var(--druck-gruen); white-space:nowrap}
+  .tfarbe{
+    display:inline-block; flex:0 0 auto; width:13px; height:13px; margin-right:6px; vertical-align:-2px;
+    border-radius:4px; background:var(--tf,transparent); border:1px solid rgba(35,38,43,.22);
+  }
+  .tfarbe.offen{border-style:dashed; border-color:rgba(35,38,43,.32)}
+  .banderole .tfarbe{width:10px; height:10px; margin-right:5px; vertical-align:-1px}
+  .wz.gruen{border-color:var(--druck-gruen); color:var(--druck-gruen)}
+  .tab[data-tab="bestand"].aktiv{color:var(--druck-gruen)}
+  .streifen{display:flex; gap:7px; padding:0 14px; overflow-x:auto; scrollbar-width:none}
+  .streifen::-webkit-scrollbar{display:none}
+  .l-chip{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:999px;
+    border:1px solid var(--linie); background:var(--karte); font-size:12.5px; color:var(--tinte-2); white-space:nowrap;
+  }
+  .l-chip b{color:var(--tinte); font-weight:600}
+  .l-chip.knapp{background:#f7e9d8; border-color:#e6d0ae; color:#8a5a17}
+  .l-chip.knapp b{color:#8a5a17}
+  .l-chip.leer{background:#f6e3e5; border-color:#e3c2c7; color:var(--beere)}
+  .l-chip.leer b{color:var(--beere)}
+  .lager{background:var(--karte); border-radius:var(--radius); box-shadow:var(--schatten); padding:12px 14px; margin-bottom:12px}
+  .lager-kopf{display:flex; align-items:baseline; gap:8px; margin-bottom:4px}
+  .lager-name{flex:1; min-width:0; font-family:Georgia,serif; font-style:italic; font-size:17px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .lager-summe{flex:0 0 auto; font-size:11.5px; color:var(--tinte-2)}
+  .lager-zeile{display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px dashed var(--linie)}
+  .lager-gr{flex:0 0 42px; font-size:13.5px; font-weight:600}
+  .lager-frei{flex:1; min-width:0; font-size:12px; color:var(--tinte-2)}
+  .lager-frei.knapp{color:#8a5a17; font-weight:600}
+  .lager-frei.leer{color:var(--beere); font-weight:600}
+  .lager-menge{flex:0 0 auto; display:flex; align-items:center; gap:6px}
+  .rund{
+    width:32px; height:32px; border-radius:50%; border:1px solid var(--linie); background:var(--stoff);
+    font-size:17px; line-height:1; color:var(--tinte-2); display:flex; align-items:center; justify-content:center;
+  }
+  .rund:active{opacity:.55}
+  .lager-zahl{min-width:30px; padding:5px 0; text-align:center; font-size:15.5px; font-weight:600}
+  .raster{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:9px}
+  .raster-feld{background:var(--karte); border:1px solid var(--linie); border-radius:10px; padding:7px 8px}
+  .raster-feld span{display:block; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--tinte-2); margin-bottom:2px}
+  .feld .raster-feld input[type=text]{width:100%; padding:5px 2px; border:none; background:transparent; font-size:17px; font-weight:600; text-align:center; border-radius:0}
+
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+
+<header class="kopf">
+  <h1 id="kopfTitel">Druckaufträge</h1>
+  <p class="unterzeile" id="zusammenfassung">&nbsp;</p>
+</header>
+<div class="laufstich" aria-hidden="true"></div>
+<button class="speicherband" id="speicherBand" hidden></button>
+<input type="file" id="fImport" accept="application/json,.json" hidden>
+
+<!-- ── Ansicht: Aufträge ── -->
+<div id="viewAuftraege">
+  <section class="lagerband" id="lagerBand" hidden>
+    <button class="lagerband-kopf" data-tab="bestand">
+      <span class="lagerband-titel">Bestand</span>
+      <span class="lagerband-zahl" id="lagerBandZahl"></span>
+      <span class="lagerband-mehr">alle ansehen ›</span>
+    </button>
+    <div class="streifen" id="lagerStreifen" aria-label="Bestand auf einen Blick"></div>
+  </section>
+
+  <nav class="chips" id="chips" aria-label="Nach Status filtern"></nav>
+  <div class="werkzeuge">
+    <button class="wz" id="wzSortieren">↕ Sortieren: <b id="sortLabel">Deadline</b></button>
+    <button class="wz stark" id="wzNeuerOrdner">+ Neuer Ordner</button>
+    <button class="wz" id="wzDaten" aria-label="Daten sichern und laden">⤓ Daten</button>
+  </div>
+  <main class="liste" id="liste"></main>
+
+  <div class="leer" id="leer" hidden>
+    <div class="rahmen" aria-hidden="true"><div class="innen"></div></div>
+    <p>Noch keine Aufträge auf dem Sieb.</p>
+    <p class="klein">Tippe auf +, um den ersten anzulegen.</p>
+  </div>
+</div>
+
+<!-- ── Ansicht: Bestand ── -->
+<div id="viewBestand" hidden>
+  <div class="werkzeuge">
+    <button class="wz gruen" id="wzLieferung">＋ Lieferung</button>
+    <button class="wz" id="wzWarn">⚠ Warnen ab <b id="warnLabel">2</b></button>
+    <button class="wz" id="wzAufraeumen" hidden>⌫ Leere entfernen</button>
+  </div>
+  <main class="liste" id="bestandBody"></main>
+</div>
+
+<button class="fab" id="fabNeu" aria-label="Neuen Auftrag anlegen">+</button>
+
+<nav class="tabs" id="tabs">
+  <button class="tab aktiv" data-tab="auftraege"><span class="sym" aria-hidden="true">▤</span>Aufträge</button>
+  <button class="tab" data-tab="bestand"><span class="sym" aria-hidden="true">▦<span class="melder" id="tabMelder" hidden></span></span>Bestand</button>
+</nav>
+
+<!-- ── Formular ── -->
+<section class="sheet" id="sheetForm" aria-label="Auftrag bearbeiten">
+  <div class="sheet-kopf">
+    <button class="zurueck" data-akt="form-zu">‹ Zurück</button>
+    <h2 id="formTitel">Neuer Auftrag</h2>
+  </div>
+  <div class="sheet-body">
+
+    <div class="feld">
+      <label for="fPerson">Für wen</label>
+      <input type="text" id="fPerson" placeholder="Name" autocomplete="off">
+    </div>
+
+    <div class="feld">
+      <label for="fOrdner">Ordner</label>
+      <input type="text" id="fOrdner" list="ordnerListe" placeholder="z. B. Hochzeit Larissa &amp; Peter – leer lassen für Einzelstück" autocomplete="off">
+      <datalist id="ordnerListe"></datalist>
+    </div>
+
+    <div class="feld">
+      <label for="fMotiv">Motiv – was wird gedruckt</label>
+      <textarea id="fMotiv"></textarea>
+    </div>
+
+    <div class="feld">
+      <span class="feld-titel">Status</span>
+      <div class="status-schalter" id="formStatusSchalter"></div>
+    </div>
+
+    <div class="feld">
+      <span class="feld-titel">Fotos (Vorlage, Layout, Ergebnis)</span>
+      <div class="foto-reihe" id="fotoReihe"></div>
+      <input type="file" id="fFotos" accept="image/*" multiple hidden>
+      <p class="hinweis">Bis zu 4 Fotos, werden automatisch verkleinert.</p>
+    </div>
+
+    <div class="feld">
+      <span class="feld-titel">Druckfarbe</span>
+      <div class="wahl-chips" id="farbChips"></div>
+      <div id="farbWrap" hidden style="margin-top:11px">
+        <label for="fFarbe1" id="farbe1Label">Farbe</label>
+        <input type="text" id="fFarbe1" autocomplete="off">
+        <div id="farbe2Wrap" hidden style="margin-top:11px">
+          <label for="fFarbe2">Zweite Farbe</label>
+          <input type="text" id="fFarbe2" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="feld-reihe">
+      <div class="feld" style="flex:0 0 84px">
+        <label for="fAnzahl">Anzahl</label>
+        <input type="text" id="fAnzahl" inputmode="numeric" value="1" autocomplete="off">
+      </div>
+      <div class="feld">
+        <label for="fTextil">Textil</label>
+        <input type="text" id="fTextil" list="textilListe" autocomplete="off">
+        <datalist id="textilListe"></datalist>
+      </div>
+    </div>
+
+    <div class="feld">
+      <label for="fTextilFarbe">Farbe Textil</label>
+      <input type="text" id="fTextilFarbe" list="farbListe" autocomplete="off">
+      <datalist id="farbListe"></datalist>
+      <div class="wahl-chips" style="margin-top:8px">
+        <button class="wahl-chip sonst" id="fFarbWahl" style="--wf:var(--druck-blau)">Farbkarte …</button>
+      </div>
+      <p class="hinweis" id="bestandHinweis"></p>
+    </div>
+
+    <div class="feld" id="groesseFeld" hidden>
+      <span class="feld-titel">Größe &amp; Schnitt</span>
+      <div class="wahl-chips" id="groesseChips"></div>
+      <div class="wahl-chips" id="schnittChips" style="margin-top:8px"></div>
+    </div>
+
+    <div class="feld">
+      <span class="feld-titel">Platzierung</span>
+      <div class="wahl-chips" id="platzChips"></div>
+      <div id="platzSonstWrap" hidden style="margin-top:9px">
+        <input type="text" id="fPlatzSonst" placeholder="z. B. Ärmel links, Nacken, Saum …" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="feld-reihe">
+      <div class="feld">
+        <label for="fDatum">Auftrag vom</label>
+        <input type="date" id="fDatum">
+      </div>
+      <div class="feld">
+        <label for="fDeadline">Deadline</label>
+        <input type="date" id="fDeadline">
+      </div>
+    </div>
+    <p class="hinweis" id="fristHinweis" style="margin:-10px 0 16px"></p>
+
+    <div class="feld">
+      <span class="feld-titel">Bezahlung</span>
+      <div class="wahl-chips" id="zahlChips"></div>
+      <div id="betragWrap" style="margin-top:9px">
+        <input type="text" id="fBetrag" placeholder="Betrag, z. B. 25 € (optional)" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="feld">
+      <label for="fNotiz">Notizen</label>
+      <textarea id="fNotiz" placeholder="z. B. Sieb 43T, Rakel mittelhart, Passer prüfen …"></textarea>
+    </div>
+
+    <button class="knopf" id="btnSpeichern">Auftrag speichern</button>
+    <p class="hinweis" id="formFehler" style="color:var(--beere)"></p>
+  </div>
+</section>
+
+<!-- ── Detail ── -->
+<section class="sheet" id="sheetDetail" aria-label="Auftragsdetails">
+  <div class="sheet-kopf">
+    <button class="zurueck" data-akt="detail-zu">‹ Zurück</button>
+    <h2 id="detailTitel">Auftrag</h2>
+  </div>
+  <div class="sheet-body" id="detailBody"></div>
+</section>
+
+<!-- ── Lieferung ── -->
+<section class="sheet" id="sheetLieferung" aria-label="Lieferung eintragen">
+  <div class="sheet-kopf">
+    <button class="zurueck" data-akt="lieferung-zu">‹ Zurück</button>
+    <h2>Lieferung eintragen</h2>
+  </div>
+  <div class="sheet-body">
+    <div class="feld">
+      <label for="lTextil">Textil</label>
+      <input type="text" id="lTextil" list="textilListe" value="T-Shirt" autocomplete="off">
+    </div>
+    <div class="feld">
+      <label for="lFarbe">Farbe</label>
+      <input type="text" id="lFarbe" list="farbListe" autocomplete="off">
+      <div class="wahl-chips" style="margin-top:8px">
+        <button class="wahl-chip sonst" id="lFarbWahl" style="--wf:var(--druck-blau)">Farbkarte …</button>
+      </div>
+    </div>
+    <div class="feld" id="lSchnittFeld">
+      <span class="feld-titel">Schnitt</span>
+      <div class="wahl-chips" id="lSchnittChips"></div>
+    </div>
+    <div class="feld">
+      <span class="feld-titel" id="lRasterTitel">Stück je Größe</span>
+      <div class="raster" id="lRaster"></div>
+    </div>
+    <button class="knopf" id="btnLieferung">Lieferung buchen</button>
+    <p class="hinweis" id="lieferFehler" style="color:var(--beere)"></p>
+    <p class="hinweis">Vorhandene Mengen werden dazugezählt.</p>
+  </div>
+</section>
+
+<div class="blatt" id="blatt"><div class="blatt-inhalt" id="blattInhalt"></div></div>
+<div class="viewer" id="viewer"><img id="viewerBild" alt="Foto in groß"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+const ICON192 = "data:image/png;base64,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";
+const ICON512 = "data:image/png;base64,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";
+(function alsAppEinrichten(){
+  try{
+    const m = {
+      name:"Siebdruckaufträge", short_name:"Siebdruck",
+      description:"Übersicht über deine Siebdruckaufträge",
+      start_url:".", scope:".", display:"standalone", orientation:"portrait",
+      background_color:"#f3f4f1", theme_color:"#f3f4f1", lang:"de",
+      icons:[
+        { src:ICON192, sizes:"192x192", type:"image/png", purpose:"any" },
+        { src:ICON512, sizes:"512x512", type:"image/png", purpose:"any maskable" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(m)], { type:"application/manifest+json" });
+    document.getElementById("manifestLink").href = URL.createObjectURL(blob);
+    document.getElementById("appleIcon").href = ICON192;
+  }catch(e){}
+})();
+
+/* ── Stammdaten ────────────────────────── */
+const STATUS = {
+  offen:      { label:"Offen",     farbe:"#c99a3a", hell:"#dcb15c" },
+  fertig:     { label:"Fertig",    farbe:"#4a7c59", hell:"#6c9a79" },
+  uebergeben: { label:"Übergeben", farbe:"#a2a7ad", hell:"#bfc3c8" }
+};
+const STATUS_REIHE = ["offen","fertig","uebergeben"];
+const ZAHLUNG = {
+  offen:    { label:"Nicht gezahlt", farbe:"#5c6168" },
+  gezahlt:  { label:"Gezahlt",       farbe:"#4a7c59" },
+  geschenk: { label:"🎁 Geschenk",   farbe:"#37518f" }
+};
+const ZAHLUNG_REIHE = ["offen","gezahlt","geschenk"];
+const FARB_ARTEN = { einfarbig:"Einfarbig", zweifarbig:"Zweifarbig" };
+const GROESSEN = ["XS","S","M","L","XL","XXL","3XL"];
+const SCHNITTE = ["Unisex","Frauenschnitt"];
+const KLEIDUNG_WOERTER = ["shirt","hoodie","sweat","pulli","pullover","longsleeve","polo","body","jacke","weste","kleid","hemd","bluse","top","trikot","strampler","anzug","hose","shorts","rock","bademantel","strick","fleece","poncho"];
+function istKleidung(txt){
+  const s = String(txt || "").toLowerCase().replace(/[\s\-\/]/g, "");
+  return KLEIDUNG_WOERTER.some(w => s.indexOf(w) !== -1);
+}
+
+const TEXTILIEN = [
+  "T-Shirt","Longsleeve","Poloshirt","Tanktop","Hemd","Bluse","Sweatshirt","Hoodie","Zip-Hoodie",
+  "Pullover","Strickjacke","Fleecejacke","Jeansjacke","Trainingsjacke","Weste","Kleid","Rock",
+  "Jogginghose","Shorts","Latzhose","Schlafanzug","Bademantel","Poncho",
+  "Babybody","Strampler","Lätzchen","Kinder-T-Shirt","Puppenkleidung",
+  "Schürze","Kochjacke","Arbeitsjacke",
+  "Handtuch (Frottee)","Gästehandtuch","Badetuch","Saunatuch","Waschlappen","Geschirrtuch","Topflappen",
+  "Bettwäsche","Kissenbezug","Deko-Kissenhülle","Sitzkissen","Wolldecke","Kuscheldecke",
+  "Tischdecke","Tischläufer","Platzset","Stoffserviette","Filzuntersetzer","Korkuntersetzer",
+  "Stoffbeutel / Jutebeutel","Turnbeutel","Einkaufsnetz","Rucksack","Kulturbeutel","Federmäppchen",
+  "Brotzeitbeutel","Brillenetui","Stoff-Portemonnaie","Schlüsselanhänger (Filz)",
+  "Schildkappe / Cap","Beanie / Mütze","Stirnband","Schal","Halstuch","Bandana",
+  "Socken","Hausschuhe","Handschuhe","Haarband","Stofftaschentuch",
+  "Hundehalstuch","Hundedecke","Katzenkissen",
+  "Vorhang","Wimpel","Wandbehang","Lesezeichen (Filz)","Nadelkissen",
+  "Patch / Aufnäher","Stoffstück / Testlappen","Klopapier (Scherzartikel)"
+];
+
+const BEISPIELE = {
+  motiv: [
+    "Bandlogo einfarbig, Brustdruck ca. 10 cm",
+    "Schriftzug „Hüttengaudi“ in Blockbuchstaben, 25 cm breit",
+    "Bergsilhouette als Vollton, Rücken 30 cm",
+    "Vereinswappen in zwei Farben, Passer wichtig",
+    "Monogramm „L & P“ verschlungen, ca. 8 cm",
+    "Zwei ineinandergreifende Ringe, darunter 05.09.2026",
+    "Fuchskopf als Strichzeichnung, ohne Fläche",
+    "Anker mit Tau, maritim, ca. 12 cm",
+    "Kleines Edelweiß, 6 cm, weiß auf dunklem Shirt",
+    "Name „Marius“ in Kursivschrift, ca. 15 cm lang",
+    "Hausberg-Umriss mit Höhenangabe darunter",
+    "Welle im Hokusai-Stil, stark vereinfacht",
+    "Fliegenpilz, 8 cm, für den Kinderpulli",
+    "Olivenzweig-Kranz, Initialen mittig",
+    "Datum 24.08.2026 in Ziffern, 2 cm hoch",
+    "Herz nur als Kontur, nicht ausgefüllt",
+    "Tannenzweig mit Zapfen, diagonal gesetzt",
+    "Blumenkranz aus Wildblumen, oben offen",
+    "Kleine Biene mit gestrichelter Flugbahn",
+    "Schriftzug „Guten Morgen“ mit kleiner Kaffeetasse"
+  ],
+  textil: TEXTILIEN,
+  get textilFarbe(){
+    const aus = [];
+    for(const karte of FARBKARTEN)
+      for(const f of karte.farben) if(aus.indexOf(f[0]) === -1) aus.push(f[0]);
+    return aus;
+  },
+  druckFarbe: ["Schwarz","Weiß","Naturweiß","Marineblau","Royalblau","Rot (Pantone 186 C)","Bordeaux","Orange","Senfgelb","Neongelb","Neonpink","Waldgrün","Salbeigrün","Petrol","Grau","Silber metallic","Gold metallic","Kupfer metallic","Puff-Weiß (Hochdruck)","Softtouch-Schwarz"],
+  druckFarbe2: ["Weiß","Schwarz","Gold metallic","Neonorange","Creme","Hellgrau","Rot","Dunkelblau","Senfgelb","Terracotta","Salbeigrün","Kupfer metallic","Petrol","Altrosa","Silber metallic","Beere","Ocker","Türkis","Anthrazit","Naturweiß"]
+};
+
+/* Farbkarten der beiden Marken. Die Hex-Werte sind nach Augenmaß an die Stoffmuster
+   angeglichen – wer es exakt braucht, tauscht hier einzelne Werte aus. */
+const FARBKARTEN = [
+  { marke:"Stanley/Stella Creator 2.0", farben:[
+    ["Black","#1a1a1a"],["White","#ffffff"],["Vintage White","#f0ece2"],["Off White","#ece7dc"],
+    ["Natural Raw","#ded3bd"],["French Navy","#26334a"],["Worker Blue","#41678f"],["Bright Blue","#1f5fae"],
+    ["Aqua Blue","#4a9ec4"],["Pool Blue","#7fc4d6"],["Blue Ice","#cfdce6"],["Blue Soul","#7d97ad"],
+    ["Mindful Blue","#2f4858"],["Blue Grey","#8a99a6"],["Stargazer","#3f5b6b"],["Deep Teal","#1f4d4a"],
+    ["Misty Jade","#a9c6bb"],["Aloe","#b7c2a4"],["Verdant Green","#2e6b46"],["Glazed Green","#55704a"],
+    ["Green Bay","#93ab84"],["Khaki","#7d7a5f"],["Faded Olive","#6e6c4e"],["Spectra Yellow","#f2c53d"],
+    ["Viva Yellow","#f4d35e"],["Honey Paper","#e8d9b0"],["Ochre","#c98b2e"],["Nispero","#e08a3c"],
+    ["Fiesta","#e2603f"],["Fraiche Peche","#f2b39a"],["Cotton Pink","#f0c3cb"],["Bubble Pink","#e86a9a"],
+    ["Red","#c1272d"],["Earthy Red","#a63a34"],["Burgundy","#6a2333"],["Deep Plum","#5c2b40"],
+    ["Red Brown","#8f4436"],["Heritage Brown","#6b4a37"],["Mocha","#8a6a55"],["Latte","#c8ab8e"],
+    ["Desert Dust","#d9c7ae"],["Stone","#cfc6b8"],["Lavender","#ab9ac9"],["Lilac Dream","#c7b6d6"],
+    ["Purple Love","#6b4b8a"],["Heather Grey","#b5b5b5"],["Cool Heather Grey","#c9cbcb"],
+    ["Mid Heather Grey","#9a9a9a"],["Dark Heather Grey","#5e5e5e"],["Dark Heather Blue","#4a5a6e"],
+    ["Eco Heather","#cfcabb"],["Heather Haze","#d8d2c8"],["Misty Grey","#b9b7b2"],
+    ["India Ink Grey","#4a4a4d"],["Anthracite","#3a3a3c"]
+  ]},
+  { marke:"EarthPositive EP01", farben:[
+    ["White","#ffffff"],["Ecru","#e6dfcf"],["Black","#1b1b1b"],["Ash Black","#33322f"],
+    ["Light Charcoal","#4b4b4b"],["Dark Grey","#545454"],["Dark Heather","#4f5257"],
+    ["Melange Grey","#b0b0ac"],["Light Grey","#d3d3cf"],["Navy Blue","#26304a"],
+    ["Denim Blue","#3f5a7d"],["Faded Denim","#7b95ad"],["Bright Blue","#1e63ad"],
+    ["Aqua Marine","#56b7ad"],["Bottle Green","#17493a"],["Moss Green","#4e6b46"],
+    ["Leaf Green","#6f9e52"],["Burgundy","#6b2231"],["Dark Red","#8c2a2a"],["Red","#c62128"],
+    ["Bright Pink","#e0568f"],["Misty Pink","#edc6c8"],["Sweet Lilac","#cbbcdc"],
+    ["Buttercup Yellow","#f3cf4a"],["Pale Lemon","#f2e9a0"],["Mango","#ef9036"]
+  ]}
+];
+/* deutsche Schreibweisen, damit ältere Einträge auch einen Punkt bekommen */
+const FARB_ALIAS = {
+  "weiß":"#ffffff", "weiss":"#ffffff", "naturweiß":"#ece7dc", "naturweiss":"#ece7dc", "creme":"#e8dfcc",
+  "schwarz":"#1b1b1b", "anthrazit":"#3a3a3c", "grau":"#b0b0ac", "hellgrau":"#d3d3cf",
+  "hellgrau meliert":"#c9cbcb", "dunkelgrau":"#545454", "natur":"#ded3bd", "beige":"#e6dfcf",
+  "sand":"#ded3bd", "taupe":"#a89b8c", "marineblau":"#26304a", "navy":"#26304a", "blau":"#1f5fae",
+  "jeansblau":"#3f5a7d", "petrol":"#1f4d4a", "türkis":"#56b7ad", "grün":"#6f9e52",
+  "waldgrün":"#17493a", "salbeigrün":"#b7c2a4", "olive":"#6e6c4e", "rot":"#c62128",
+  "bordeaux":"#6a2333", "rostrot":"#a63a34", "terracotta":"#c1614a", "altrosa":"#e0b6b4",
+  "rosa":"#edc6c8", "lavendel":"#cbbcdc", "flieder":"#cbbcdc", "gelb":"#f3cf4a",
+  "senfgelb":"#d8a72e", "ocker":"#c98b2e", "orange":"#ef9036", "braun":"#6b4a37"
+};
+const FARB_HEX = (function(){
+  const m = {};
+  for(const karte of FARBKARTEN)
+    for(const f of karte.farben){
+      const k = f[0].trim().toLowerCase();
+      if(!m[k]) m[k] = f[1];
+    }
+  for(const k in FARB_ALIAS) if(!m[k]) m[k] = FARB_ALIAS[k];
+  return m;
+})();
+function farbHex(name){
+  return FARB_HEX[String(name || "").trim().replace(/\s+/g, " ").toLowerCase()] || "";
+}
+/* Kästchen in genau der Stofffarbe – unbekannte Farben bekommen ein gestricheltes Kästchen */
+function farbPunktHtml(name){
+  if(!String(name || "").trim()) return "";
+  const hex = farbHex(name);
+  return hex ? '<span class="tfarbe" style="--tf:' + hex + '"></span>'
+             : '<span class="tfarbe offen"></span>';
+}
+
+const PLATZ_VORGABEN = ["Brust links","Rücken groß"];
+const SORTIERUNGEN = [
+  { id:"deadline", label:"Deadline",        info:"Dringendes zuerst" },
+  { id:"neueste",  label:"Neueste zuerst",  info:"Nach Auftragsdatum" },
+  { id:"aelteste", label:"Älteste zuerst",  info:"Nach Auftragsdatum" },
+  { id:"status",   label:"Status",          info:"Offen · Fertig · Übergeben" },
+  { id:"name",     label:"Name A–Z",        info:"Nach Person" }
+];
+const ERLEDIGT = "✓ Erledigt";
+const OHNE = "Ohne Ordner";
+
+/* ── Speicher ──────────────────────────── */
+/* Es gibt zwei mögliche Ablagen: den App-Speicher und den Browser-Speicher.
+   Je nach Umgebung ist mal die eine, mal die andere gesperrt – deshalb wird beim
+   Start geprüft, was wirklich funktioniert, und danach in alles geschrieben, was geht.
+   Jeder Eintrag trägt einen Zeitstempel, damit beim Lesen die neuere Fassung gewinnt. */
+let appSpeicher = false, browserSpeicher = false;
+let meldungApp = "", meldungBrowser = "";   /* rohe Fehlertexte für die Anzeige unter „Daten“ */
+const merker = new Map();          /* Notbetrieb: hält die Daten wenigstens bis zum Schließen */
+
+async function speicherPruefen(){
+  const probe = "druck-probe";
+  try{
+    localStorage.setItem(probe, "1");
+    localStorage.removeItem(probe);
+    browserSpeicher = true;
+  }catch(e){ browserSpeicher = false; meldungBrowser = rohText(e); }
+  if(typeof window.storage !== "undefined" && window.storage){
+    try{
+      await window.storage.set(probe, "1", false);
+      const zurueck = await window.storage.get(probe, false);
+      if(!zurueck || zurueck.value !== "1") throw new Error("Wert kommt nicht zurück");
+      await window.storage.delete(probe, false);
+      appSpeicher = true;
+    }catch(e){ appSpeicher = false; meldungApp = rohText(e); }
+  }
+}
+function rohText(e){
+  if(!e) return "";
+  return String(e.name || "Fehler") + ": " + String(e.message || e).slice(0,120);
+}
+function speicherOrt(){
+  if(appSpeicher && browserSpeicher) return "App- und Browser-Speicher";
+  if(appSpeicher) return "App-Speicher";
+  if(browserSpeicher) return "Browser dieses Geräts";
+  return "nur bis zum Schließen dieses Fensters";
+}
+function entpacken(text){
+  const o = JSON.parse(text);
+  const gepackt = o && typeof o === "object" && !Array.isArray(o) &&
+                  Object.prototype.hasOwnProperty.call(o, "d") &&
+                  Object.prototype.hasOwnProperty.call(o, "z");
+  return gepackt ? o : { z:0, d:o };
+}
+async function spLies(key){
+  const gefunden = [];
+  if(browserSpeicher){
+    try{ const v = localStorage.getItem(key); if(v) gefunden.push(entpacken(v)); }catch(e){}
+  }
+  if(appSpeicher){
+    try{ const r = await window.storage.get(key, false); if(r && r.value) gefunden.push(entpacken(r.value)); }catch(e){}
+  }
+  if(merker.has(key)){
+    try{ gefunden.push(entpacken(merker.get(key))); }catch(e){}
+  }
+  if(!gefunden.length) return null;
+  gefunden.sort((a,b) => b.z - a.z);
+  return gefunden[0].d;
+}
+async function spSchreib(key, wert){
+  const text = JSON.stringify({ z:Date.now(), d:wert });
+  merker.set(key, text);
+  let geschafft = false, fehler = null;
+  if(browserSpeicher){
+    try{ localStorage.setItem(key, text); geschafft = true; }catch(e){ fehler = e; }
+  }
+  if(appSpeicher){
+    try{ await window.storage.set(key, text, false); geschafft = true; }catch(e){ fehler = fehler || e; }
+  }
+  /* Gibt es gar keine Ablage, läuft die App bewusst im Notbetrieb – das Band oben sagt es. */
+  if(!geschafft && (browserSpeicher || appSpeicher)) throw fehler || new Error("Speichern nicht möglich");
+}
+async function spLoesch(key){
+  merker.delete(key);
+  if(browserSpeicher){ try{ localStorage.removeItem(key); }catch(e){} }
+  if(appSpeicher){ try{ await window.storage.delete(key, false); }catch(e){} }
+}
+
+/* Gebündeltes Schreiben: schnelle Serien (± am Bestand) werden zusammengefasst,
+   fehlgeschlagene Versuche wiederholt. Scheitert es endgültig, sieht man es. */
+const schreibPlan = new Map();
+let speicherFehler = "";
+function plane(key, holen){
+  const eintrag = schreibPlan.get(key) || { stand:0 };
+  eintrag.holen = holen;
+  eintrag.stand = (eintrag.stand || 0) + 1;   /* jede Änderung zählt hoch */
+  clearTimeout(eintrag.timer);
+  eintrag.timer = setTimeout(() => schreibeJetzt(key, 1), 300);
+  schreibPlan.set(key, eintrag);
+}
+/* Wichtig: Während ein Schreibvorgang läuft, kann eine neue Änderung dazukommen.
+   Der Zähler „stand“ sorgt dafür, dass die dann nicht mitgelöscht, sondern
+   gleich hinterhergeschrieben wird. */
+async function schreibeJetzt(key, versuch){
+  const eintrag = schreibPlan.get(key);
+  if(!eintrag || eintrag.laeuft) return;
+  clearTimeout(eintrag.timer);
+  const stand = eintrag.stand;
+  eintrag.laeuft = true;
+  try{
+    await spSchreib(key, eintrag.holen());
+    eintrag.laeuft = false;
+    if(eintrag.stand !== stand){ schreibeJetzt(key, 1); return; }   /* inzwischen Neues */
+    if(schreibPlan.get(key) === eintrag) schreibPlan.delete(key);
+    if(speicherFehler && !schreibPlan.size){ speicherFehler = ""; renderSpeicherBand(); }
+  }catch(e){
+    eintrag.laeuft = false;
+    if(versuch < 3){
+      eintrag.timer = setTimeout(() => schreibeJetzt(key, versuch + 1), versuch * 600);
+      return;
+    }
+    if(schreibPlan.get(key) === eintrag) schreibPlan.delete(key);
+    speicherFehler = istVoll(e)
+      ? "Der Speicher ist voll – zuletzt konnte nichts gesichert werden."
+      : "Zuletzt konnte nicht gespeichert werden.";
+    if(appSpeicher) meldungApp = rohText(e);
+    if(browserSpeicher && !appSpeicher) meldungBrowser = rohText(e);
+    renderSpeicherBand();
+    toast(istVoll(e) ? "Speicher voll – unter „Daten“ Platz schaffen" : "Speichern hat nicht geklappt");
+  }
+}
+function istVoll(e){
+  const txt = String((e && e.name) || "") + " " + String((e && e.message) || "");
+  return /quota|exceed|full|storage/i.test(txt);
+}
+/* Schreibt einen Schlüssel sofort und lässt Fehler nach oben durch –
+   für Stellen, die dem Nutzer direkt Rückmeldung geben (Formular speichern). */
+async function sofortSchreiben(key){
+  const eintrag = schreibPlan.get(key);
+  if(!eintrag) return;
+  const stand = eintrag.stand;
+  clearTimeout(eintrag.timer);
+  try{
+    await spSchreib(key, eintrag.holen());
+  }catch(e){
+    /* im Hintergrund weiter versuchen, damit nichts liegen bleibt */
+    eintrag.timer = setTimeout(() => schreibeJetzt(key, 1), 600);
+    throw e;
+  }
+  if(eintrag.stand === stand && schreibPlan.get(key) === eintrag) schreibPlan.delete(key);
+}
+function alleSofortSchreiben(){
+  for(const key of Array.from(schreibPlan.keys())) schreibeJetzt(key, 3);
+}
+function indexSichern(){ plane(INDEX_KEY, () => auftraege); }
+
+const INDEX_KEY = "druck-auftraege-index";
+const ANSICHT_KEY = "druck-ansicht";
+const ORDNER_KEY = "druck-ordner";
+const BESTAND_KEY = "druck-bestand";
+let auftraege = [];
+let ordner = [];
+let filter = "alle";
+let sortId = "deadline";
+let zuOrdner = [ERLEDIGT];
+let frischId = null;
+let blattModus = null, blattDaten = null;
+let formFotos = [], formFotosLaden = Promise.resolve();
+let bearbeiteId = null, detailId = null;
+let formStatus = "offen", formZahlung = "offen", farbArt = "";
+let formGroesse = "", formSchnitt = "", platzWert = "", platzSonst = false;
+let bestand = [], warnAb = 2, lieferSchnitt = "", tab = "auftraege";
+
+/* ── Helfer ────────────────────────────── */
+const $ = id => document.getElementById(id);
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function heuteISO(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function fmtDatum(iso){ if(!iso) return "–"; const p = iso.split("-"); return p[2] + "." + p[1] + "." + p[0]; }
+function fmtKurz(iso){ if(!iso) return ""; const p = iso.split("-"); return p[2] + "." + p[1] + "."; }
+function tageBis(iso){
+  const heute = new Date(); heute.setHours(0,0,0,0);
+  return Math.round((new Date(iso + "T00:00:00") - heute) / 86400000);
+}
+function istAktiv(a){ return a.status === "offen"; }
+/* Erledigt = übergeben UND bezahlt; bei Geschenken reicht übergeben */
+function istErledigt(a){
+  return a.status === "uebergeben" && (a.zahlung === "gezahlt" || a.zahlung === "geschenk");
+}
+function fristInfo(a){
+  if(!istAktiv(a)) return null;
+  if(!a.deadline) return { text:"Keine Deadline", klasse:"keine-frist" };
+  const t = tageBis(a.deadline);
+  if(t < 0)   return { text:(t === -1 ? "1 Tag überfällig" : Math.abs(t) + " Tage überfällig"), klasse:"frist-rot" };
+  if(t === 0) return { text:"heute fällig", klasse:"frist-rot" };
+  if(t === 1) return { text:"morgen fällig", klasse:"frist-warn" };
+  if(t <= 7)  return { text:"noch " + t + " Tage · " + fmtKurz(a.deadline), klasse:"frist-warn" };
+  return { text:"bis " + fmtDatum(a.deadline), klasse:"frist-ok" };
+}
+function farbText(a){
+  const f1 = (a.farbe1 || "").trim(), f2 = (a.farbe2 || "").trim();
+  if(a.farbArt === "zweifarbig"){
+    const beide = [f1, f2].filter(Boolean).join(" + ");
+    return beide ? "Zweifarbig · " + beide : "Zweifarbig";
+  }
+  if(a.farbArt === "einfarbig") return f1 || "Einfarbig";
+  return f1;
+}
+function toast(txt){
+  const t = $("toast");
+  t.textContent = txt; t.classList.add("zeig");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("zeig"), 2200);
+}
+function neueId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function datalistFuellen(id, werte){
+  $(id).innerHTML = werte.map(w => '<option value="' + esc(w) + '"></option>').join("");
+}
+function ansichtSichern(){ plane(ANSICHT_KEY, () => ({ sortId, zuOrdner })); }
+function ordnerSichern(){ plane(ORDNER_KEY, () => ordner); }
+
+const ROT_FELDER = [
+  { id:"fMotiv",       pool:() => BEISPIELE.motiv },
+  { id:"fTextil",      pool:() => BEISPIELE.textil },
+  { id:"fTextilFarbe", pool:() => BEISPIELE.textilFarbe },
+  { id:"fFarbe1",      pool:() => BEISPIELE.druckFarbe },
+  { id:"fFarbe2",      pool:() => BEISPIELE.druckFarbe2 }
+];
+function rotSetzen(f){
+  const el = $(f.id), pool = f.pool();
+  if(!el || !pool || !pool.length) return;
+  el.placeholder = "z. B. " + pool[Math.floor(Math.random() * pool.length)];
+}
+function rotFeld(id){ const f = ROT_FELDER.find(x => x.id === id); if(f) rotSetzen(f); }
+function rotAlleNeu(){ for(const f of ROT_FELDER) rotSetzen(f); }
+
+/* ── Sortieren ─────────────────────────── */
+function sortSchluessel(a){
+  const stGruppe = a.status === "offen" ? 0 : (a.status === "fertig" ? 1 : 2);
+  const name = (a.person || "").toLowerCase();
+  switch(sortId){
+    case "neueste":  return "9|" + (9999999999999 - new Date((a.datum || "1970-01-01") + "T00:00:00").getTime()).toString().padStart(14,"0") + "|" + name;
+    case "aelteste": return "9|" + (a.datum || "9999-99-99") + "|" + name;
+    case "status":   return stGruppe + "|" + (a.deadline || "9999-99-99") + "|" + name;
+    case "name":     return "9|" + name + "|" + (a.datum || "");
+    default:         return stGruppe + "|" + (a.deadline || "9999-99-99") + "|" + (a.datum || "");
+  }
+}
+function sortiert(liste){
+  return liste.slice().sort((x,y) => {
+    const sx = sortSchluessel(x), sy = sortSchluessel(y);
+    return sx < sy ? -1 : (sx > sy ? 1 : 0);
+  });
+}
+
+/* ── Liste ─────────────────────────────── */
+function renderChips(){
+  const zaehl = s => auftraege.filter(a => a.status === s).length;
+  let html = chipHtml("alle", "Alle", auftraege.length);
+  for(const s of STATUS_REIHE) html += chipHtml(s, STATUS[s].label, zaehl(s));
+  $("chips").innerHTML = html;
+  $("sortLabel").textContent = (SORTIERUNGEN.find(s => s.id === sortId) || SORTIERUNGEN[0]).label;
+}
+function chipHtml(wert, label, n){
+  return '<button class="chip' + (filter === wert ? ' aktiv' : '') + '" data-filter="' + wert + '">' +
+         esc(label) + (n ? ' <b>' + n + '</b>' : '') + '</button>';
+}
+
+function karteHtml(a, imArchiv){
+  const st = STATUS[a.status] || STATUS.offen;
+  const frist = fristInfo(a);
+  const farbe = farbText(a);
+  const unter = [auftragAnzahl(a) > 1 ? auftragAnzahl(a) + "×" : "", a.textil, a.textilFarbe,
+                 a.groesse ? "Gr. " + a.groesse : "", a.schnitt, a.platzierung].filter(Boolean).join(" · ");
+  const metaTeile = [];
+  if(a.datum) metaTeile.push("Auftrag " + fmtDatum(a.datum));
+  if(!istAktiv(a) && a.deadline) metaTeile.push("Deadline war " + fmtDatum(a.deadline));
+  if(imArchiv && (a.ordner || "").trim()) metaTeile.push("Ordner: " + a.ordner.trim());
+
+  const zahlKlasse = a.zahlung === "gezahlt" ? " gezahlt" : (a.zahlung === "geschenk" ? " geschenk" : "");
+  const zahlInhalt = a.zahlung === "geschenk" ? "🎁 Geschenk" : '<span class="mini-box" aria-hidden="true">✓</span>Bezahlt';
+
+  return (
+    '<div class="karte' + (a.id === frischId ? ' frisch' : '') + '" data-karte="' + a.id + '">' +
+      '<span class="farbstreifen" style="--g1:' + st.farbe + ';--g2:' + st.hell + '"></span>' +
+      '<div class="karte-spalte">' +
+        '<button class="karte-flaeche" data-detail="' + a.id + '">' +
+          '<span class="person">' + esc(a.person) + '</span>' +
+          (a.motiv ? '<span class="motiv">' + esc(a.motiv) + '</span>' : '') +
+          (unter ? '<span class="banderole">' + farbPunktHtml(a.textilFarbe) + esc(unter) + '</span>' : '') +
+          '<span class="karte-fuss">' +
+            (frist ? '<span class="marke ' + frist.klasse + '">' + esc(frist.text) + '</span>' : '') +
+            (farbe ? '<span class="marke">🎨 ' + esc(farbe) + '</span>' : '') +
+            (a.fotoAnzahl ? '<span class="marke">📷 ' + a.fotoAnzahl + '</span>' : '') +
+          '</span>' +
+          (metaTeile.length ? '<span class="meta">' + esc(metaTeile.join(" · ")) + '</span>' : '') +
+        '</button>' +
+        '<div class="karte-aktion">' +
+          '<button class="akt-knopf" data-statuszyklus="' + a.id + '" style="color:' + st.farbe + '"><span class="punkt"></span>' + st.label + '</button>' +
+          '<button class="akt-knopf' + zahlKlasse + '" data-zahlzyklus="' + a.id + '">' + zahlInhalt + '</button>' +
+          '<button class="akt-knopf griff" data-griff="' + a.id + '" aria-label="Ordner wählen oder Karte ziehen">' +
+            '<span class="punkte" aria-hidden="true">⠿</span><span class="txt">' +
+            ((a.ordner || "").trim() ? esc(a.ordner.trim()) : "Ordner") + '</span></button>' +
+          (a.betrag && a.zahlung !== "geschenk" ? '<span class="betrag-rechts">' + esc(a.betrag) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      (a.vorschau ? '<img class="thumb" src="' + a.vorschau + '" alt="">' : '') +
+    '</div>'
+  );
+}
+
+function ordnerHtml(name, posten, art){
+  const zu = zuOrdner.indexOf(name) !== -1;
+  const archiv = art === "archiv";
+  const info = archiv
+    ? posten.length + " Stück · abgeschlossen"
+    : (posten.length ? posten.length + " Stück" + (posten.filter(istAktiv).length ? " · " + posten.filter(istAktiv).length + " offen" : " · fertig") : "leer");
+  const zielWert = art === "eigen" ? name : (art === "ohne" ? "" : null);
+
+  let html = '<section class="ordner' + (archiv ? ' erledigt' : '') + '">' +
+    '<div class="ordner-kopf">' +
+      '<button class="ordner-titel" data-falten="' + esc(name) + '">' +
+        '<span class="ordner-pfeil">' + (zu ? "▸" : "▾") + '</span>' +
+        '<span class="ordner-name">' + esc(name) + '</span>' +
+        '<span class="ordner-zahl">' + esc(info) + '</span>' +
+      '</button>' +
+      (art === "eigen" ? '<button class="ordner-mehr" data-ordnermehr="' + esc(name) + '" aria-label="Ordner bearbeiten">⋯</button>' : '') +
+    '</div><div class="ordner-linie"></div>';
+
+  if(!zu){
+    html += '<div class="ordner-inhalt"' + (zielWert !== null ? ' data-dropziel="' + esc(zielWert) + '"' : '') + '>';
+    html += posten.length
+      ? posten.map(a => karteHtml(a, archiv)).join("")
+      : (zielWert !== null ? '<div class="ordner-leer">Noch leer – zieh eine Karte am ⠿ hierher</div>' : '');
+    html += '</div>';
+  }
+  return html + '</section>';
+}
+
+function renderListe(){
+  const gefiltert = auftraege.filter(a => filter === "alle" ? true : a.status === filter);
+  const geordnet = sortiert(gefiltert);
+  $("leer").hidden = auftraege.length > 0;
+
+  const offenN = auftraege.filter(istAktiv).length;
+  const ohneFrist = auftraege.filter(a => istAktiv(a) && !a.deadline).length;
+  const unbezahlt = auftraege.filter(a => a.zahlung === "offen" && a.status !== "offen").length;
+  let zus;
+  if(auftraege.length === 0) zus = "Dein Überblick über alle Druckprojekte";
+  else if(offenN === 0) zus = "Alles fertig – nichts offen 🎉";
+  else{
+    zus = offenN + (offenN === 1 ? " offener Auftrag" : " offene Aufträge");
+    if(ohneFrist) zus += " · " + ohneFrist + " ohne Deadline";
+  }
+  if(unbezahlt) zus += " · " + unbezahlt + " noch nicht gezahlt";
+  $("zusammenfassung").textContent = zus;
+
+  /* Bei aktivem Status-Filter bleibt alles sichtbar, sonst wandert Erledigtes ins Archiv */
+  const archivTrennen = filter === "alle";
+  const laufend = archivTrennen ? geordnet.filter(a => !istErledigt(a)) : geordnet;
+  const archiv  = archivTrennen ? geordnet.filter(istErledigt) : [];
+
+  let html = "";
+  for(const o of ordner){
+    html += ordnerHtml(o, laufend.filter(a => (a.ordner || "").trim() === o), "eigen");
+  }
+  const ohne = laufend.filter(a => !(a.ordner || "").trim());
+  if(ohne.length || ordner.length){
+    html += ordnerHtml(OHNE, ohne, "ohne");
+  }
+  if(archiv.length) html += ordnerHtml(ERLEDIGT, archiv, "archiv");
+  $("liste").innerHTML = html;
+}
+function renderSpeicherBand(){
+  const band = $("speicherBand");
+  if(!band) return;
+  const text = speicherFehler ||
+    (!appSpeicher && !browserSpeicher
+      ? "Dieses Fenster kann nichts dauerhaft speichern – alles bleibt nur bis zum Schließen."
+      : "");
+  band.innerHTML = '<span aria-hidden="true">⚠</span><span>' + esc(text) +
+    ' Tippen für Details.</span><span class="pfeil" aria-hidden="true">›</span>';
+  band.hidden = !text;
+}
+function renderTabs(){
+  const knapp = knappePosten().length;
+  const melder = $("tabMelder");
+  melder.textContent = knapp;
+  melder.hidden = !knapp;
+  for(const b of $("tabs").querySelectorAll("[data-tab]")) b.classList.toggle("aktiv", b.dataset.tab === tab);
+  $("fabNeu").setAttribute("aria-label", tab === "bestand" ? "Lieferung eintragen" : "Neuen Auftrag anlegen");
+}
+function renderAlles(){
+  $("viewAuftraege").hidden = tab !== "auftraege";
+  $("viewBestand").hidden   = tab !== "bestand";
+  $("kopfTitel").textContent = tab === "bestand" ? "Bestand" : "Druckaufträge";
+  renderTabs();
+  renderSpeicherBand();
+  if(tab === "bestand"){ renderBestand(); }
+  else{ renderChips(); renderListe(); renderStreifen(); }
+}
+function tabWechseln(neu){
+  if(tab === neu) return;
+  tab = neu;
+  renderAlles();
+  window.scrollTo({ top:0 });
+}
+
+/* ── Ordner verwalten ──────────────────── */
+async function ordnerAnlegen(name){
+  const n = String(name || "").trim();
+  if(!n) return false;
+  if(n === ERLEDIGT || n === OHNE){ toast("Dieser Name ist vergeben"); return false; }
+  if(ordner.indexOf(n) !== -1){ toast("Ordner gibt es schon"); return false; }
+  ordner.push(n);
+  await ordnerSichern();
+  renderAlles();
+  toast("Ordner „" + n + "“ angelegt");
+  return true;
+}
+async function ordnerUmbenennen(alt, neu){
+  const n = String(neu || "").trim();
+  if(!n || n === alt) return;
+  if(ordner.indexOf(n) !== -1){ toast("Ordner gibt es schon"); return; }
+  ordner[ordner.indexOf(alt)] = n;
+  for(const a of auftraege) if((a.ordner || "").trim() === alt) a.ordner = n;
+  const i = zuOrdner.indexOf(alt); if(i !== -1) zuOrdner[i] = n;
+  ordnerSichern(); indexSichern(); ansichtSichern();
+  renderAlles();
+  toast("Umbenannt in „" + n + "“");
+}
+async function ordnerLoeschen(name){
+  ordner = ordner.filter(o => o !== name);
+  let betroffen = 0;
+  for(const a of auftraege) if((a.ordner || "").trim() === name){ a.ordner = ""; betroffen++; }
+  ordnerSichern(); indexSichern();
+  renderAlles();
+  toast(betroffen ? "Ordner gelöscht, " + betroffen + " Aufträge bleiben erhalten" : "Ordner gelöscht");
+}
+async function ordnerZuweisen(id, name){
+  const a = auftraege.find(x => x.id === id);
+  if(!a) return;
+  const n = String(name || "").trim();
+  if((a.ordner || "") === n) return;
+  a.ordner = n;
+  if(n && ordner.indexOf(n) === -1){ ordner.push(n); ordnerSichern(); }
+  indexSichern();
+  renderAlles(); frischMarkieren(id);
+  toast(n ? "In „" + n + "“ verschoben" : "Aus dem Ordner genommen");
+}
+
+/* ── Bestand ───────────────────────────── */
+/* Ein Posten ist eine Kombination aus Textil, Farbe, Schnitt und Größe.
+   Lieferungen zählen dazu, fertige Aufträge buchen ab, offene gelten als reserviert. */
+const WARN_STUFEN = [1,2,3,5];
+function normal(x){ return String(x || "").trim().replace(/\s+/g, " ").toLowerCase(); }
+function bKey(textil, farbe, groesse, schnitt){
+  return [normal(textil), normal(farbe), normal(groesse), normal(schnitt)].join("|");
+}
+function postenKey(p){ return bKey(p.textil, p.farbe, p.groesse, p.schnitt); }
+function postenFinden(key){ return key ? (bestand.find(p => postenKey(p) === key) || null) : null; }
+function postenName(p){
+  return [p.textil, p.farbe, p.schnitt, p.groesse ? "Gr. " + p.groesse : ""].filter(Boolean).join(" · ");
+}
+function auftragAnzahl(a){ const n = parseInt(a.anzahl, 10); return n > 0 ? n : 1; }
+function auftragKey(a){
+  const t = (a.textil || "").trim(), f = (a.textilFarbe || "").trim();
+  return (t && f) ? bKey(t, f, a.groesse, a.schnitt) : "";
+}
+function istVerbraucht(a){ return a.status === "fertig" || a.status === "uebergeben"; }
+/* Passt der Schnitt nicht exakt und bleibt trotzdem genau ein Posten übrig, wird der genommen –
+   sonst müsste man „Unisex“ überall gleich tippen, damit es zusammenfindet. */
+function auftragPostenKey(a){
+  const key = auftragKey(a);
+  if(!key || postenFinden(key)) return key;
+  const teile = key.split("|");
+  const treffer = bestand.filter(p => normal(p.textil) === teile[0] &&
+                                      normal(p.farbe) === teile[1] &&
+                                      normal(p.groesse) === teile[2]);
+  return treffer.length === 1 ? postenKey(treffer[0]) : key;
+}
+function reserviert(key){
+  if(!key) return 0;
+  return auftraege.reduce((n,a) => n + (istAktiv(a) && auftragPostenKey(a) === key ? auftragAnzahl(a) : 0), 0);
+}
+function freiVon(p){ return p.menge - reserviert(postenKey(p)); }
+function knappePosten(){ return bestand.filter(p => freiVon(p) <= warnAb); }
+function bestandSichern(){ plane(BESTAND_KEY, () => ({ artikel:bestand, warnAb })); }
+
+function bestandFreigeben(a){
+  if(!a || !a.entnommen || !a.entnommen.key) return;
+  const p = postenFinden(a.entnommen.key);
+  if(p) p.menge += a.entnommen.menge;
+  a.entnommen = null;
+}
+/* Bucht ab, sobald ein Auftrag fertig ist – und wieder zurück, wenn nicht mehr.
+   Gibt einen Hinweis zurück, wenn der Posten knapp wird. */
+function bestandAbgleichen(a){
+  const sollKey = istVerbraucht(a) ? auftragPostenKey(a) : "";
+  const sollMenge = sollKey ? auftragAnzahl(a) : 0;
+  const ist = (a.entnommen && a.entnommen.key) ? a.entnommen : null;
+  if(ist && ist.key === sollKey && ist.menge === sollMenge) return "";
+  bestandFreigeben(a);
+  if(sollKey && sollMenge){
+    const p = postenFinden(sollKey);
+    if(p){
+      p.menge -= sollMenge;
+      a.entnommen = { key:sollKey, menge:sollMenge };
+      return warnText(p);
+    }
+  }
+  return "";
+}
+function warnText(p){
+  const f = freiVon(p);
+  if(f < 0)   return postenName(p) + ": " + Math.abs(f) + " mehr verbraucht als erfasst";
+  if(f === 0) return postenName(p) + " ist leer";
+  if(f <= warnAb) return "Nur noch " + f + " × " + postenName(p);
+  return "";
+}
+function farbKnopf(id, wert){
+  const el = $(id);
+  if(!el) return;
+  el.innerHTML = farbPunktHtml(wert) + "Farbkarte …";
+}
+function renderFarbKnoepfe(){
+  farbKnopf("fFarbWahl", $("fTextilFarbe").value);
+  farbKnopf("lFarbWahl", $("lFarbe").value);
+}
+function farbListeFuellen(){
+  const aus = [];
+  for(const p of bestand) if(p.farbe && aus.indexOf(p.farbe) === -1) aus.push(p.farbe);
+  for(const f of BEISPIELE.textilFarbe) if(aus.indexOf(f) === -1) aus.push(f);
+  datalistFuellen("farbListe", aus);
+}
+
+/* Kurzname für den Streifen: „Weiß M“ statt der ganzen Kombination */
+function kurzName(p){
+  const rest = p.groesse || String(p.textil || "").split(/[\s\/]/)[0];
+  return [p.farbe, rest].filter(Boolean).join(" ");
+}
+function renderStreifen(){
+  const el = $("lagerStreifen");
+  if(!bestand.length){ $("lagerBand").hidden = true; el.innerHTML = ""; return; }
+  const knapp = knappePosten().length;
+  $("lagerBandZahl").textContent = bestand.reduce((n,p) => n + p.menge, 0) + " Stück" +
+    (knapp ? " · " + knapp + " fast leer" : "");
+  const liste = bestand.slice().sort((x,y) =>
+    freiVon(x) - freiVon(y) || (normal(kurzName(x)) < normal(kurzName(y)) ? -1 : 1));
+  el.innerHTML = liste.slice(0,12).map(p => {
+    const f = freiVon(p);
+    const k = f <= 0 ? " leer" : (f <= warnAb ? " knapp" : "");
+    return '<button class="l-chip' + k + '" data-tab="bestand">' + farbPunktHtml(p.farbe) +
+           esc(kurzName(p)) + ' <b>' + f + '</b></button>';
+  }).join("") + (liste.length > 12 ? '<button class="l-chip" data-tab="bestand">weitere …</button>' : '');
+  $("lagerBand").hidden = false;
+}
+
+function groessenRang(g){ const i = GROESSEN.indexOf(g); return i === -1 ? (g ? 90 : 99) : i; }
+function bestandGruppen(){
+  const map = new Map();
+  for(const p of bestand){
+    const k = [normal(p.textil), normal(p.farbe), normal(p.schnitt)].join("|");
+    if(!map.has(k)) map.set(k, { titel:[p.textil, p.farbe, p.schnitt].filter(Boolean).join(" · "), farbe:p.farbe, posten:[] });
+    map.get(k).posten.push(p);
+  }
+  const gruppen = Array.from(map.values());
+  for(const g of gruppen){
+    g.posten.sort((x,y) => groessenRang(x.groesse) - groessenRang(y.groesse) ||
+                            (normal(x.groesse) < normal(y.groesse) ? -1 : 1));
+  }
+  gruppen.sort((x,y) => normal(x.titel) < normal(y.titel) ? -1 : 1);
+  return gruppen;
+}
+function renderBestand(){
+  const leere = bestand.filter(p => p.menge === 0 && !reserviert(postenKey(p)));
+  $("wzAufraeumen").hidden = !leere.length;
+  $("warnLabel").textContent = warnAb;
+
+  const gesamt = bestand.reduce((n,p) => n + p.menge, 0);
+  const knapp = knappePosten().length;
+  $("zusammenfassung").textContent = bestand.length
+    ? gesamt + " Stück · " + bestand.length + (bestand.length === 1 ? " Position" : " Positionen") +
+      (knapp ? " · " + knapp + " fast leer" : "")
+    : "Noch nichts eingelagert";
+
+  if(!bestand.length){
+    $("bestandBody").innerHTML = '<div class="leer"><div class="rahmen" aria-hidden="true"><div class="innen"></div></div>' +
+      '<p>Noch kein Bestand erfasst.</p><p class="klein">Tippe auf +, um eine Lieferung einzutragen.</p></div>';
+    return;
+  }
+  let html = "";
+  for(const g of bestandGruppen()){
+    const summe = g.posten.reduce((n,p) => n + p.menge, 0);
+    html += '<div class="lager"><div class="lager-kopf">' +
+      '<span class="lager-name">' + farbPunktHtml(g.farbe) + esc(g.titel) + '</span>' +
+      '<span class="lager-summe">' + summe + ' Stück</span></div>';
+    for(const p of g.posten){
+      const res = reserviert(postenKey(p)), frei = p.menge - res;
+      const klasse = frei <= 0 ? " leer" : (frei <= warnAb ? " knapp" : "");
+      const info = frei < 0 ? Math.abs(frei) + " zu wenig erfasst"
+                 : (frei === 0 ? "nichts frei" : frei + " frei") + (res ? " · " + res + " reserviert" : "");
+      html += '<div class="lager-zeile">' +
+        '<span class="lager-gr">' + esc(p.groesse || "–") + '</span>' +
+        '<span class="lager-frei' + klasse + '">' + esc(info) + '</span>' +
+        '<span class="lager-menge">' +
+          '<button class="rund" data-bminus="' + p.id + '" aria-label="Eins weniger">−</button>' +
+          '<button class="lager-zahl" data-bmenge="' + p.id + '" aria-label="Menge eintippen">' + p.menge + '</button>' +
+          '<button class="rund" data-bplus="' + p.id + '" aria-label="Eins mehr">+</button>' +
+        '</span></div>';
+    }
+    html += '</div>';
+  }
+  html += '<p class="hinweis" style="margin:2px 2px 0">Abgebucht wird, sobald ein Auftrag auf <b>Fertig</b> steht. Offene Aufträge gelten als reserviert.</p>';
+  $("bestandBody").innerHTML = html;
+}
+async function mengeAendern(id, d){
+  const p = bestand.find(x => x.id === id);
+  if(!p) return;
+  const neu = p.menge + d;
+  if(d < 0 && neu < 0) return;
+  p.menge = neu;
+  await bestandSichern();
+  renderAlles();
+}
+async function mengeSetzen(id, n){
+  const p = bestand.find(x => x.id === id);
+  if(!p) return;
+  p.menge = Math.max(0, n);
+  await bestandSichern();
+  renderAlles();
+}
+async function leereEntfernen(){
+  const vorher = bestand.length;
+  bestand = bestand.filter(p => !(p.menge === 0 && !reserviert(postenKey(p))));
+  await bestandSichern();
+  renderAlles();
+  toast(vorher - bestand.length + " Positionen entfernt");
+}
+
+/* ── Lieferung ─────────────────────────── */
+function lieferOeffnen(){
+  $("lieferFehler").textContent = "";
+  farbListeFuellen();
+  if(!$("lTextil").value.trim()) $("lTextil").value = "T-Shirt";
+  $("lRaster").innerHTML = "";
+  renderFarbKnoepfe();
+  renderLieferung();
+  $("sheetLieferung").classList.add("offen");
+  $("sheetLieferung").querySelector(".sheet-body").scrollTop = 0;
+}
+function renderLieferung(){
+  const kleidung = istKleidung($("lTextil").value);
+  $("lSchnittFeld").hidden = !kleidung;
+  $("lSchnittChips").innerHTML = SCHNITTE.map(sc =>
+    '<button class="wahl-chip' + (lieferSchnitt === sc ? ' aktiv' : '') + '" data-lschnitt="' + sc +
+    '" style="--wf:var(--druck-blau)">' + sc + '</button>').join("");
+  $("lRasterTitel").textContent = kleidung ? "Stück je Größe" : "Anzahl";
+  const alt = {};
+  $("lRaster").querySelectorAll("input").forEach(i => { alt[i.dataset.groesse] = i.value; });
+  const felder = kleidung ? GROESSEN : [""];
+  $("lRaster").innerHTML = felder.map(g =>
+    '<div class="raster-feld"><span>' + (g || "Stück") + '</span>' +
+    '<input type="text" inputmode="numeric" placeholder="0" data-groesse="' + esc(g) + '" value="' + esc(alt[g] || "") + '"></div>'
+  ).join("");
+}
+async function lieferungBuchen(){
+  const textil = $("lTextil").value.trim(), farbe = $("lFarbe").value.trim();
+  if(!textil || !farbe){ $("lieferFehler").textContent = "Textil und Farbe angeben."; return; }
+  const kleidung = istKleidung(textil);
+  const schnitt = kleidung ? lieferSchnitt : "";
+  let summe = 0, zeilen = 0;
+  for(const inp of $("lRaster").querySelectorAll("input")){
+    const n = parseInt(inp.value, 10);
+    if(!n || n <= 0) continue;
+    const groesse = kleidung ? inp.dataset.groesse : "";
+    const key = bKey(textil, farbe, groesse, schnitt);
+    let p = postenFinden(key);
+    if(!p){ p = { id:neueId(), textil, farbe, groesse, schnitt, menge:0 }; bestand.push(p); }
+    p.menge += n; summe += n; zeilen++;
+  }
+  if(!summe){ $("lieferFehler").textContent = "Trag mindestens eine Anzahl ein."; return; }
+  await bestandSichern();
+  $("lFarbe").value = ""; $("lRaster").innerHTML = ""; renderFarbKnoepfe();
+  $("sheetLieferung").classList.remove("offen");
+  renderAlles();
+  toast(summe + " Stück gebucht" + (zeilen > 1 ? " · " + zeilen + " Größen" : ""));
+}
+
+/* ── Sicherung: alles in eine Datei und zurück ── */
+function speicherBelegt(){
+  if(!browserSpeicher) return -1;
+  let bytes = -1;
+  try{
+    bytes = 0;
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      bytes += k.length + (localStorage.getItem(k) || "").length;
+    }
+  }catch(e){ return -1; }
+  return bytes * 2;   /* localStorage rechnet in UTF-16 */
+}
+async function fotosAufraeumen(){
+  let weg = 0;
+  for(const a of auftraege){
+    if(a.fotoAnzahl && istErledigt(a)){
+      await spLoesch("druck-fotos-" + a.id);
+      a.fotoAnzahl = 0;
+      weg++;
+    }
+  }
+  indexSichern();
+  alleSofortSchreiben();
+  blattSchliessen(); renderAlles();
+  toast(weg ? "Fotos von " + weg + " erledigten Aufträgen gelöscht" : "Nichts zum Aufräumen gefunden");
+}
+async function datenExportieren(){
+  const paket = {
+    typ:"siebdruckauftraege", version:1, erstellt:new Date().toISOString(),
+    auftraege, ordner, ansicht:{ sortId, zuOrdner }, lager:{ artikel:bestand, warnAb }, fotos:{}
+  };
+  for(const a of auftraege){
+    if(!a.fotoAnzahl) continue;
+    const f = await spLies("druck-fotos-" + a.id);
+    if(Array.isArray(f) && f.length) paket.fotos[a.id] = f;
+  }
+  const blob = new Blob([JSON.stringify(paket)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "siebdruckauftraege-" + heuteISO() + ".json";
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  blattSchliessen();
+  toast("Sicherung gespeichert ✓");
+}
+async function datenImportieren(datei){
+  let paket;
+  try{ paket = JSON.parse(await datei.text()); }
+  catch(e){ toast("Datei nicht lesbar"); return; }
+  if(!paket || !Array.isArray(paket.auftraege)){ toast("Das ist keine Sicherung dieser App"); return; }
+  auftraege = paket.auftraege;
+  ordner = Array.isArray(paket.ordner) ? paket.ordner : [];
+  if(paket.ansicht){
+    if(paket.ansicht.sortId && SORTIERUNGEN.some(s => s.id === paket.ansicht.sortId)) sortId = paket.ansicht.sortId;
+    if(Array.isArray(paket.ansicht.zuOrdner)) zuOrdner = paket.ansicht.zuOrdner;
+  }
+  if(paket.lager){
+    if(Array.isArray(paket.lager.artikel)) bestand = paket.lager.artikel;
+    if(typeof paket.lager.warnAb === "number") warnAb = paket.lager.warnAb;
+  }
+  const fotos = paket.fotos || {};
+  for(const id in fotos){ try{ await spSchreib("druck-fotos-" + id, fotos[id]); }catch(e){} }
+  migrieren();
+  indexSichern(); ordnerSichern(); ansichtSichern(); bestandSichern();
+  alleSofortSchreiben();
+  blattSchliessen(); renderAlles();
+  toast(auftraege.length + " Aufträge geladen ✓");
+}
+
+/* ── Blatt von unten ───────────────────── */
+function blattOeffnen(modus, daten){
+  blattModus = modus; blattDaten = daten || null;
+  renderBlatt();
+  $("blatt").classList.add("offen");
+}
+function blattSchliessen(){ $("blatt").classList.remove("offen"); blattModus = null; blattDaten = null; }
+function renderBlatt(){
+  let html = "";
+  if(blattModus === "sort"){
+    html = '<h3>Sortieren</h3><p class="klein">Gilt innerhalb jedes Ordners</p>' +
+      SORTIERUNGEN.map(s =>
+        '<button class="b-option' + (s.id === sortId ? ' aktiv' : '') + '" data-sortwahl="' + s.id + '">' +
+        esc(s.label) + (s.id === sortId ? '<span class="haken">✓</span>' : '') + '</button>'
+      ).join("");
+  }
+  else if(blattModus === "zuweisen"){
+    const a = auftraege.find(x => x.id === blattDaten);
+    const aktuell = a ? (a.ordner || "").trim() : "";
+    html = '<h3>Ordner wählen</h3><p class="klein">' + (a ? "Für „" + esc(a.person) + "“" : "") + '</p>' +
+      '<button class="b-option' + (aktuell ? '' : ' aktiv') + '" data-owahl="">Ohne Ordner' +
+        (aktuell ? '' : '<span class="haken">✓</span>') + '</button>' +
+      ordner.map(o =>
+        '<button class="b-option' + (o === aktuell ? ' aktiv' : '') + '" data-owahl="' + esc(o) + '">' +
+        esc(o) + (o === aktuell ? '<span class="haken">✓</span>' : '') + '</button>'
+      ).join("") +
+      '<div class="b-neu"><input type="text" id="blattEingabe" placeholder="Neuer Ordner …" autocomplete="off">' +
+      '<button data-blattok="1">Anlegen</button></div>';
+  }
+  else if(blattModus === "neu"){
+    html = '<h3>Neuer Ordner</h3><p class="klein">Zum Beispiel ein Anlass, für den du mehrere Stücke druckst</p>' +
+      '<div class="b-neu"><input type="text" id="blattEingabe" placeholder="Name des Ordners" autocomplete="off">' +
+      '<button data-blattok="1">Anlegen</button></div>';
+  }
+  else if(blattModus === "daten"){
+    const fotoN = auftraege.reduce((s,a) => s + (a.fotoAnzahl || 0), 0);
+    const belegt = speicherBelegt();
+    const alteFotos = auftraege.filter(a => a.fotoAnzahl && istErledigt(a)).length;
+    const notbetrieb = !appSpeicher && !browserSpeicher;
+    html = (speicherFehler || notbetrieb ? '<div class="speicherband" style="width:100%; margin:0 0 14px">' +
+              '<span aria-hidden="true">⚠</span><span>' + esc(speicherFehler ||
+              "Dieses Fenster kann nichts dauerhaft speichern. Sichere deine Daten mit dem Knopf unten in eine Datei, " +
+              "bevor du es schließt – und öffne die App am besten direkt im Browser.") + '</span></div>' : '') +
+      '<h3>Speicher</h3>' +
+      '<p class="klein">Gespeichert wird in: <b>' + speicherOrt() + '</b>. ' + (belegt >= 0
+        ? "Belegt: " + (belegt / 1048576).toFixed(1) + " MB von etwa 5 MB · " + fotoN + " Fotos"
+        : fotoN + " Fotos gespeichert") +
+      '. Fotos brauchen mit Abstand am meisten Platz.</p>' +
+      ((meldungApp || meldungBrowser)
+        ? '<p class="klein" style="opacity:.85">Letzte Meldung' +
+          (meldungApp ? ' aus dem App-Speicher: ' + esc(meldungApp) : '') +
+          (meldungBrowser ? (meldungApp ? ' · ' : ' aus dem Browser-Speicher: ') + esc(meldungBrowser) : '') + '</p>'
+        : '') +
+      (alteFotos ? '<button class="b-option" data-daten="fotosweg">🧹 Fotos aus erledigten Aufträgen löschen' +
+        '<span class="haken">' + alteFotos + ' Aufträge</span></button>' : '') +
+      '<h3 style="margin-top:20px">Daten sichern</h3>' +
+      '<p class="klein">Alles liegt nur auf diesem Gerät. Mit einer Sicherungsdatei nimmst du deine Aufträge mit oder holst sie zurück.</p>' +
+      '<button class="b-option" data-daten="export">⤓ Sicherung speichern' +
+        '<span class="haken">' + auftraege.length + ' Aufträge · ' + bestand.length + ' Posten · ' + fotoN + ' Fotos</span></button>' +
+      '<button class="b-option" data-daten="import">⤒ Sicherung laden</button>' +
+      '<p class="klein" style="margin-top:14px">Laden ersetzt alles, was gerade in dieser App steht.</p>';
+  }
+  else if(blattModus === "farbkarte"){
+    const ziel = $(blattDaten);
+    const aktuell = normal(ziel ? ziel.value : "");
+    const gruppe = (titel, namen) => !namen.length ? "" :
+      '<p class="klein" style="margin:15px 0 7px">' + esc(titel) + '</p><div class="wahl-chips">' +
+      namen.map(n => '<button class="wahl-chip' + (normal(n) === aktuell ? ' aktiv' : '') +
+        '" data-fwahl="' + esc(n) + '">' + farbPunktHtml(n) + esc(n) + '</button>').join("") + '</div>';
+    const imLager = [];
+    for(const p of bestand) if(p.farbe && imLager.indexOf(p.farbe) === -1) imLager.push(p.farbe);
+    html = '<h3>Farbkarte</h3><p class="klein">Tippen übernimmt die Farbe</p>' +
+      gruppe("Im Bestand", imLager) +
+      FARBKARTEN.map(k => gruppe(k.marke, k.farben.map(f => f[0]))).join("");
+  }
+  else if(blattModus === "warn"){
+    html = '<h3>Erinnerung</h3><p class="klein">Melden, sobald frei nur noch …</p>' +
+      WARN_STUFEN.map(n =>
+        '<button class="b-option' + (warnAb === n ? ' aktiv' : '') + '" data-warnab="' + n + '">' +
+        n + ' Stück' + (warnAb === n ? '<span class="haken">✓</span>' : '') + '</button>').join("");
+  }
+  else if(blattModus === "menge"){
+    const p = bestand.find(x => x.id === blattDaten);
+    html = '<h3>Menge ändern</h3><p class="klein">' + (p ? esc(postenName(p)) : "") + '</p>' +
+      '<div class="b-neu"><input type="text" inputmode="numeric" id="blattEingabe" value="' + (p ? p.menge : 0) + '" autocomplete="off">' +
+      '<button data-blattok="1">Übernehmen</button></div>';
+  }
+  else if(blattModus === "ordner"){
+    html = '<h3>' + esc(blattDaten) + '</h3><p class="klein">Ordner bearbeiten</p>' +
+      '<div class="b-neu"><input type="text" id="blattEingabe" value="' + esc(blattDaten) + '" autocomplete="off">' +
+      '<button data-blattok="1">Umbenennen</button></div>' +
+      '<button class="b-option warn" data-oloeschen="' + esc(blattDaten) + '" style="margin-top:16px">Ordner löschen (Aufträge bleiben)</button>';
+  }
+  $("blattInhalt").innerHTML = html;
+  const inp = $("blattEingabe");
+  if(inp && blattModus !== "ordner") setTimeout(() => { inp.focus(); if(blattModus === "menge") inp.select(); }, 60);
+}
+async function blattBestaetigen(){
+  const inp = $("blattEingabe");
+  if(!inp) return;
+  const wert = inp.value.trim();
+  if(!wert){ inp.focus(); return; }
+  if(blattModus === "neu"){ if(await ordnerAnlegen(wert)) blattSchliessen(); return; }
+  if(blattModus === "zuweisen"){ const id = blattDaten; blattSchliessen(); await ordnerZuweisen(id, wert); return; }
+  if(blattModus === "ordner"){ const alt = blattDaten; blattSchliessen(); await ordnerUmbenennen(alt, wert); return; }
+  if(blattModus === "menge"){
+    const id = blattDaten, n = parseInt(wert, 10);
+    blattSchliessen();
+    if(!isNaN(n)) await mengeSetzen(id, n);
+    return;
+  }
+}
+
+/* ── Karten ziehen ─────────────────────── */
+let zieh = null;
+function ziehStart(e, id, griff){
+  if(e.button !== undefined && e.button !== 0) return;
+  zieh = { id, griff, x0:e.clientX, y0:e.clientY, aktiv:false, klon:null, ziel:null, zielEl:null, rollen:0 };
+  try{ griff.setPointerCapture(e.pointerId); }catch(err){}
+}
+function ziehBewegen(e){
+  if(!zieh) return;
+  const dx = e.clientX - zieh.x0, dy = e.clientY - zieh.y0;
+  if(!zieh.aktiv){
+    if(Math.sqrt(dx*dx + dy*dy) < 10) return;
+    const karte = zieh.griff.closest(".karte");
+    if(!karte){ zieh = null; return; }
+    const r = karte.getBoundingClientRect();
+    const klon = karte.cloneNode(true);
+    klon.classList.add("zieh");
+    klon.style.width = r.width + "px";
+    klon.style.left = r.left + "px";
+    klon.style.top = r.top + "px";
+    document.body.appendChild(klon);
+    zieh.klon = klon;
+    zieh.gx = zieh.x0 - r.left;
+    zieh.gy = zieh.y0 - r.top;
+    karte.classList.add("zieh-quelle");
+    zieh.quelle = karte;
+    zieh.aktiv = true;
+    rollenSchleife();
+  }
+  e.preventDefault();
+  zieh.klon.style.left = (e.clientX - zieh.gx) + "px";
+  zieh.klon.style.top  = (e.clientY - zieh.gy) + "px";
+
+  const rand = 90;
+  zieh.rollen = e.clientY < rand ? -14 : (e.clientY > window.innerHeight - rand ? 14 : 0);
+
+  const unter = document.elementFromPoint(e.clientX, e.clientY);
+  const zielEl = unter ? unter.closest("[data-dropziel]") : null;
+  if(zielEl !== zieh.zielEl){
+    if(zieh.zielEl) zieh.zielEl.classList.remove("drueber");
+    zieh.zielEl = zielEl;
+    if(zielEl){ zielEl.classList.add("drueber"); zieh.ziel = zielEl.getAttribute("data-dropziel"); }
+    else zieh.ziel = null;
+  }
+}
+function rollenSchleife(){
+  if(!zieh || !zieh.aktiv) return;
+  if(zieh.rollen) window.scrollBy(0, zieh.rollen);
+  requestAnimationFrame(rollenSchleife);
+}
+function ziehEnde(){
+  if(!zieh) return;
+  const { id, aktiv, ziel } = zieh;
+  if(zieh.klon) zieh.klon.remove();
+  if(zieh.quelle) zieh.quelle.classList.remove("zieh-quelle");
+  if(zieh.zielEl) zieh.zielEl.classList.remove("drueber");
+  zieh = null;
+  if(!aktiv){ blattOeffnen("zuweisen", id); return; }
+  if(ziel !== null) ordnerZuweisen(id, ziel);
+}
+
+/* ── Formular ──────────────────────────── */
+function renderFormStatus(){
+  $("formStatusSchalter").innerHTML = STATUS_REIHE.map(s =>
+    '<button class="status-knopf' + (formStatus === s ? ' aktiv' : '') + '" data-fstatus="' + s + '" style="--sf:' + STATUS[s].farbe + '"><span class="punkt"></span>' + STATUS[s].label + '</button>'
+  ).join("");
+}
+function renderFarben(){
+  $("farbChips").innerHTML = Object.keys(FARB_ARTEN).map(k =>
+    '<button class="wahl-chip' + (farbArt === k ? ' aktiv' : '') + '" data-farbart="' + k + '" style="--wf:var(--druck-blau)">' + FARB_ARTEN[k] + '</button>'
+  ).join("");
+  $("farbWrap").hidden = !farbArt;
+  $("farbe2Wrap").hidden = farbArt !== "zweifarbig";
+  $("farbe1Label").textContent = farbArt === "zweifarbig" ? "Erste Farbe" : "Farbe";
+  if(farbArt){ rotFeld("fFarbe1"); rotFeld("fFarbe2"); }
+}
+function renderGroesse(){
+  const zeigen = istKleidung($("fTextil").value);
+  $("groesseFeld").hidden = !zeigen;
+  if(!zeigen) return;
+  $("groesseChips").innerHTML = GROESSEN.map(g =>
+    '<button class="wahl-chip' + (formGroesse === g ? ' aktiv' : '') + '" data-groesse="' + g + '">' + g + '</button>'
+  ).join("");
+  $("schnittChips").innerHTML = SCHNITTE.map(s =>
+    '<button class="wahl-chip' + (formSchnitt === s ? ' aktiv' : '') + '" data-schnitt="' + s + '" style="--wf:var(--druck-blau)">' + s + '</button>'
+  ).join("");
+}
+function renderPlatz(){
+  let html = PLATZ_VORGABEN.map(p =>
+    '<button class="wahl-chip' + (!platzSonst && platzWert === p ? ' aktiv' : '') + '" data-platz="' + esc(p) + '">' + esc(p) + '</button>'
+  ).join("");
+  html += '<button class="wahl-chip sonst' + (platzSonst ? ' aktiv' : '') + '" data-platz-sonst="1" style="--wf:var(--druck-blau)">Andere Stelle …</button>';
+  $("platzChips").innerHTML = html;
+  $("platzSonstWrap").hidden = !platzSonst;
+}
+function renderZahlung(){
+  $("zahlChips").innerHTML = ZAHLUNG_REIHE.map(z =>
+    '<button class="wahl-chip' + (formZahlung === z ? ' aktiv' : '') + '" data-zahlung="' + z + '" style="--wf:' + ZAHLUNG[z].farbe + '">' + ZAHLUNG[z].label + '</button>'
+  ).join("");
+  $("betragWrap").hidden = formZahlung === "geschenk";
+}
+function renderBestandHinweis(){
+  const el = $("bestandHinweis");
+  if(!el) return;
+  const textil = $("fTextil").value.trim(), farbe = $("fTextilFarbe").value.trim();
+  el.style.color = "";
+  if(!bestand.length || !textil || !farbe){ el.textContent = ""; return; }
+  const kleidung = istKleidung(textil);
+  const p = postenFinden(auftragPostenKey({
+    textil, textilFarbe:farbe,
+    groesse: kleidung ? formGroesse : "",
+    schnitt: kleidung ? formSchnitt : ""
+  }));
+  if(!p){ el.textContent = "Für diese Kombination ist kein Bestand erfasst."; return; }
+  const res = reserviert(postenKey(p)), frei = p.menge - res;
+  const noetig = Math.max(1, parseInt($("fAnzahl").value, 10) || 1);
+  el.textContent = "Bestand: " + p.menge + " Stück" + (res ? " · " + res + " reserviert" : "") + " · " + frei + " frei";
+  if(frei < noetig) el.style.color = "var(--beere)";
+}
+function renderFristHinweis(){
+  const h = $("fristHinweis");
+  if($("fDeadline").value){ h.textContent = ""; h.style.color = ""; }
+  else{ h.textContent = "Ohne Deadline – wird in der Übersicht lila markiert."; h.style.color = "var(--lila)"; }
+}
+
+function formOeffnen(id){
+  bearbeiteId = id || null;
+  formFotos = [];
+  $("formFehler").textContent = "";
+  $("formTitel").textContent = id ? "Auftrag bearbeiten" : "Neuer Auftrag";
+  datalistFuellen("ordnerListe", ordner);
+
+  const a = id ? auftraege.find(x => x.id === id) : null;
+  farbListeFuellen();
+  $("fPerson").value      = a ? a.person : "";
+  $("fAnzahl").value      = a ? String(auftragAnzahl(a)) : "1";
+  $("fOrdner").value      = a ? (a.ordner || "") : "";
+  $("fMotiv").value       = a ? (a.motiv || "") : "";
+  $("fFarbe1").value      = a ? (a.farbe1 || "") : "";
+  $("fFarbe2").value      = a ? (a.farbe2 || "") : "";
+  $("fTextil").value      = a ? (a.textil || "") : "";
+  $("fTextilFarbe").value = a ? (a.textilFarbe || "") : "";
+  $("fDatum").value       = a ? (a.datum || heuteISO()) : heuteISO();
+  $("fDeadline").value    = a ? (a.deadline || "") : "";
+  $("fBetrag").value      = a ? (a.betrag || "") : "";
+  $("fNotiz").value       = a ? (a.notiz || "") : "";
+
+  formStatus  = a ? a.status : "offen";
+  formZahlung = a ? (a.zahlung || "offen") : "offen";
+  farbArt     = a ? (a.farbArt || "") : "";
+  formGroesse = a ? (a.groesse || "") : "";
+  formSchnitt = a ? (a.schnitt || "") : "";
+  platzWert   = a ? (a.platzierung || "") : "";
+  platzSonst  = !!(platzWert && PLATZ_VORGABEN.indexOf(platzWert) === -1);
+  $("fPlatzSonst").value = platzSonst ? platzWert : "";
+
+  rotAlleNeu();
+  renderFormStatus(); renderFarben(); renderGroesse(); renderPlatz(); renderZahlung();
+  renderFristHinweis(); renderBestandHinweis(); renderFarbKnoepfe(); renderFotoReihe();
+  detailSchliessen();
+  $("sheetForm").classList.add("offen");
+  $("sheetForm").querySelector(".sheet-body").scrollTop = 0;
+
+  if(id && a && a.fotoAnzahl){
+    $("fotoReihe").innerHTML = '<span class="hinweis">Lade Fotos …</span>';
+    formFotosLaden = spLies("druck-fotos-" + id).then(f => {
+      if(Array.isArray(f) && bearbeiteId === id) formFotos = f;
+      renderFotoReihe();
+    });
+  }else{
+    formFotosLaden = Promise.resolve();
+  }
+}
+function formSchliessen(){ $("sheetForm").classList.remove("offen"); }
+
+function renderFotoReihe(){
+  let html = formFotos.map((src,i) =>
+    '<span class="foto-kachel"><img src="' + src + '" alt="Foto ' + (i+1) + '">' +
+    '<button class="foto-x" data-fotoweg="' + i + '" aria-label="Foto entfernen">×</button></span>'
+  ).join("");
+  if(formFotos.length < 4) html += '<button class="foto-plus" id="fotoPlus" aria-label="Foto hinzufügen">+</button>';
+  $("fotoReihe").innerHTML = html;
+}
+function bildVerkleinern(datei){
+  return new Promise((resolve, reject) => {
+    const leser = new FileReader();
+    leser.onerror = () => reject(new Error("Lesefehler"));
+    leser.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Kein Bild"));
+      img.onload = () => {
+        const max = 800;
+        let w = img.width, h = img.height;
+        if(w > max || h > max){ const f = max / Math.max(w,h); w = Math.round(w*f); h = Math.round(h*f); }
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL("image/jpeg", 0.68));
+      };
+      img.src = leser.result;
+    };
+    leser.readAsDataURL(datei);
+  });
+}
+async function fotosHinzufuegen(dateien){
+  for(const d of dateien){
+    if(formFotos.length >= 4) break;
+    try{ formFotos.push(await bildVerkleinern(d)); }
+    catch(e){ toast("Ein Foto konnte nicht geladen werden"); }
+  }
+  renderFotoReihe();
+}
+function thumbAus(dataUrl){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 220;
+      let w = img.width, h = img.height;
+      if(w > max || h > max){ const f = max / Math.max(w,h); w = Math.round(w*f); h = Math.round(h*f); }
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#f3f4f1"; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL("image/jpeg", 0.62));
+    };
+    img.onerror = () => resolve("");
+    img.src = dataUrl;
+  });
+}
+function frischMarkieren(id){
+  frischId = id;
+  const k = document.querySelector('[data-karte="' + id + '"]');
+  if(k) k.scrollIntoView({ block:"nearest" });
+  setTimeout(() => { if(frischId === id){ frischId = null; renderListe(); } }, 2000);
+}
+
+async function speichern(){
+  const person = $("fPerson").value.trim();
+  const motiv  = $("fMotiv").value.trim();
+  if(!person && !motiv){ $("formFehler").textContent = "Mindestens Person oder Motiv angeben."; return; }
+
+  const btn = $("btnSpeichern");
+  btn.disabled = true;
+  await formFotosLaden;
+
+  const id = bearbeiteId || neueId();
+  const kleidung = istKleidung($("fTextil").value);
+  const ordnerName = $("fOrdner").value.trim();
+  const eintrag = {
+    id,
+    person: person || "Ohne Namen",
+    ordner:      ordnerName,
+    motiv,
+    farbArt,
+    farbe1:      farbArt ? $("fFarbe1").value.trim() : "",
+    farbe2:      farbArt === "zweifarbig" ? $("fFarbe2").value.trim() : "",
+    textil:      $("fTextil").value.trim(),
+    textilFarbe: $("fTextilFarbe").value.trim(),
+    groesse:     kleidung ? formGroesse : "",
+    schnitt:     kleidung ? formSchnitt : "",
+    platzierung: platzSonst ? $("fPlatzSonst").value.trim() : platzWert,
+    datum:       $("fDatum").value || heuteISO(),
+    deadline:    $("fDeadline").value || "",
+    status:      formStatus,
+    zahlung:     formZahlung,
+    betrag:      formZahlung === "geschenk" ? "" : $("fBetrag").value.trim(),
+    notiz:       $("fNotiz").value.trim(),
+    anzahl:      Math.max(1, parseInt($("fAnzahl").value, 10) || 1),
+    fotoAnzahl:  formFotos.length,
+    vorschau:    ""
+  };
+  const vorher = auftraege.find(x => x.id === id);
+  eintrag.entnommen = vorher ? (vorher.entnommen || null) : null;
+
+  try{
+    if(formFotos.length){
+      eintrag.vorschau = await thumbAus(formFotos[0]);
+      await spSchreib("druck-fotos-" + id, formFotos);
+    }else{
+      await spLoesch("druck-fotos-" + id);
+    }
+    const i = auftraege.findIndex(x => x.id === id);
+    if(i >= 0) auftraege[i] = eintrag; else auftraege.push(eintrag);
+    if(ordnerName && ordner.indexOf(ordnerName) === -1){ ordner.push(ordnerName); ordnerSichern(); }
+    const lagerHinweis = bestandAbgleichen(eintrag);
+    bestandSichern();
+    indexSichern();
+    await sofortSchreiben(INDEX_KEY);
+
+    const warBearbeitung = !!bearbeiteId;
+    formSchliessen(); detailSchliessen();
+    frischId = id;
+    renderAlles();
+    window.scrollTo({ top:0, behavior:"smooth" });
+    frischMarkieren(id);
+    toast((warBearbeitung ? "Auftrag aktualisiert ✓" : "Auftrag gespeichert ✓") + (lagerHinweis ? " · " + lagerHinweis : ""));
+  }catch(e){
+    $("formFehler").textContent = istVoll(e)
+      ? "Der Speicher ist voll. Unter „Daten“ kannst du Fotos alter Aufträge löschen und es dann nochmal versuchen."
+      : "Speichern hat nicht geklappt – bitte nochmal versuchen.";
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ── Detail ────────────────────────────── */
+function detailZeilen(a){
+  const zahlLabel = a.zahlung === "geschenk" ? "Geschenk"
+                  : (a.zahlung === "gezahlt" ? "Gezahlt" : "Noch nicht gezahlt") + (a.betrag ? " · " + a.betrag : "");
+  return [
+    ["Ordner", esc(a.ordner), false],
+    ["Motiv", esc(a.motiv), false],
+    ["Druckfarbe", esc(farbText(a)), false],
+    ["Anzahl", esc(auftragAnzahl(a) + " Stück"), false],
+    ["Textil", farbPunktHtml(a.textilFarbe) + esc([a.textil, a.textilFarbe].filter(Boolean).join(" · ")), false],
+    ["Größe", esc([a.groesse ? "Gr. " + a.groesse : "", a.schnitt].filter(Boolean).join(" · ")), false],
+    ["Platzierung", esc(a.platzierung), false],
+    ["Auftrag vom", esc(fmtDatum(a.datum)), false],
+    ["Deadline", a.deadline ? esc(fmtDatum(a.deadline)) : "Keine Deadline gesetzt", !a.deadline],
+    ["Bezahlung", esc(zahlLabel), false],
+    ["Notizen", esc(a.notiz), false]
+  ].filter(z => z[1]);
+}
+function fristBlockHtml(a){
+  const frist = fristInfo(a);
+  return frist ? '<span class="marke ' + frist.klasse + '">' + esc(frist.text) + '</span>' : "";
+}
+function detailInfosAktualisieren(a){
+  const box = $("detailInfos");
+  if(!box) return;
+  box.innerHTML = detailZeilen(a).map(z =>
+    '<div class="d-zeile"><span class="d-label">' + esc(z[0]) + '</span>' +
+    '<span class="d-wert' + (z[2] ? ' warnung' : '') + '">' + z[1] + '</span></div>'
+  ).join("");
+}
+async function detailZeigen(id){
+  const a = auftraege.find(x => x.id === id);
+  if(!a) return;
+  detailId = id;
+  $("detailTitel").textContent = a.person;
+  $("detailBody").innerHTML =
+    '<div class="detail-block">' +
+      '<span class="feld-titel">Status</span>' +
+      '<div class="status-schalter" id="detailStatusBox">' +
+        STATUS_REIHE.map(s =>
+          '<button class="status-knopf' + (a.status === s ? ' aktiv' : '') + '" data-status="' + s + '" style="--sf:' + STATUS[s].farbe + '"><span class="punkt"></span>' + STATUS[s].label + '</button>'
+        ).join("") +
+      '</div>' +
+      '<div id="detailFrist" style="margin-top:12px">' + fristBlockHtml(a) + '</div>' +
+    '</div>' +
+    '<div class="detail-block">' +
+      '<span class="feld-titel">Bezahlung</span>' +
+      '<div class="wahl-chips" id="detailZahlBox">' +
+        ZAHLUNG_REIHE.map(z =>
+          '<button class="wahl-chip' + (a.zahlung === z ? ' aktiv' : '') + '" data-dzahl="' + z + '" style="--wf:' + ZAHLUNG[z].farbe + '">' + ZAHLUNG[z].label + '</button>'
+        ).join("") +
+      '</div>' +
+    '</div>' +
+    '<div class="detail-block" id="detailInfos"></div>' +
+    (a.fotoAnzahl ? '<div class="detail-block"><div class="detail-fotos" id="detailFotos">Lade Fotos …</div></div>' : '') +
+    '<button class="knopf leise" data-akt="bearbeiten">Bearbeiten</button>' +
+    '<div style="height:10px"></div>' +
+    '<button class="knopf rot" id="btnLoeschen">Auftrag löschen</button>';
+  detailInfosAktualisieren(a);
+  $("sheetDetail").classList.add("offen");
+
+  if(a.fotoAnzahl){
+    const fotos = await spLies("druck-fotos-" + id);
+    const box = $("detailFotos");
+    if(box && detailId === id){
+      box.innerHTML = Array.isArray(fotos) && fotos.length
+        ? fotos.map((f,i) => '<img src="' + f + '" data-gross="' + i + '" alt="Foto ' + (i+1) + '">').join("")
+        : '<span class="hinweis">Fotos konnten nicht geladen werden.</span>';
+      box._fotos = fotos || [];
+    }
+  }
+}
+function detailSchliessen(){ $("sheetDetail").classList.remove("offen"); detailId = null; }
+
+async function statusSetzen(neu){
+  const a = auftraege.find(x => x.id === detailId);
+  if(!a || a.status === neu) return;
+  a.status = neu;
+  const box = $("detailStatusBox");
+  if(box) box.querySelectorAll("[data-status]").forEach(b => b.classList.toggle("aktiv", b.dataset.status === neu));
+  const f = $("detailFrist");
+  if(f) f.innerHTML = fristBlockHtml(a);
+  const hinweis = bestandAbgleichen(a);
+  await bestandSichern();
+  indexSichern();
+  renderAlles();
+  toast("Status: " + STATUS[neu].label + (hinweis ? " · " + hinweis : ""));
+}
+async function zahlungSetzen(neu){
+  const a = auftraege.find(x => x.id === detailId);
+  if(!a || a.zahlung === neu) return;
+  a.zahlung = neu;
+  if(neu === "geschenk") a.betrag = "";
+  const box = $("detailZahlBox");
+  if(box) box.querySelectorAll("[data-dzahl]").forEach(b => b.classList.toggle("aktiv", b.dataset.dzahl === neu));
+  detailInfosAktualisieren(a);
+  indexSichern();
+  renderAlles();
+  toast(neu === "geschenk" ? "Als Geschenk markiert" : (neu === "gezahlt" ? "Als gezahlt markiert" : "Als offen markiert"));
+}
+async function statusZyklus(id){
+  const a = auftraege.find(x => x.id === id);
+  if(!a) return;
+  a.status = STATUS_REIHE[(STATUS_REIHE.indexOf(a.status) + 1) % STATUS_REIHE.length];
+  const hinweis = bestandAbgleichen(a);
+  await bestandSichern();
+  indexSichern();
+  renderAlles(); frischMarkieren(id);
+  toast("Status: " + STATUS[a.status].label + (hinweis ? " · " + hinweis : ""));
+}
+async function zahlungZyklus(id){
+  const a = auftraege.find(x => x.id === id);
+  if(!a) return;
+  a.zahlung = ZAHLUNG_REIHE[(ZAHLUNG_REIHE.indexOf(a.zahlung || "offen") + 1) % ZAHLUNG_REIHE.length];
+  if(a.zahlung === "geschenk") a.betrag = "";
+  indexSichern();
+  renderAlles(); frischMarkieren(id);
+  toast(a.zahlung === "geschenk" ? "🎁 Geschenk" : (a.zahlung === "gezahlt" ? "Als gezahlt markiert" : "Als nicht gezahlt markiert"));
+}
+async function loeschen(){
+  const btn = $("btnLoeschen");
+  if(btn.dataset.sicher !== "1"){
+    btn.dataset.sicher = "1";
+    btn.textContent = "Wirklich löschen? Nochmal tippen";
+    setTimeout(() => { if(btn.isConnected){ btn.dataset.sicher = ""; btn.textContent = "Auftrag löschen"; } }, 3000);
+    return;
+  }
+  const id = detailId;
+  const weg = auftraege.find(x => x.id === id);
+  if(weg && weg.entnommen){ bestandFreigeben(weg); await bestandSichern(); }
+  auftraege = auftraege.filter(x => x.id !== id);
+  indexSichern();
+  await spLoesch("druck-fotos-" + id);
+  detailSchliessen(); renderAlles();
+  toast("Auftrag gelöscht");
+}
+
+/* ── Ereignisse ────────────────────────── */
+document.addEventListener("pointerdown", e => {
+  const griff = e.target.closest("[data-griff]");
+  if(griff) ziehStart(e, griff.dataset.griff, griff);
+});
+document.addEventListener("pointermove", ziehBewegen, { passive:false });
+document.addEventListener("pointerup", ziehEnde);
+document.addEventListener("pointercancel", ziehEnde);
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, img[data-gross]");
+  if(!t){ if(e.target.id === "viewer") $("viewer").classList.remove("offen"); return; }
+  if(t.hasAttribute("data-griff")) return;   /* wird beim Loslassen behandelt */
+
+  if(t.dataset.filter){ filter = t.dataset.filter; renderAlles(); return; }
+  if(t.id === "wzSortieren"){ blattOeffnen("sort"); return; }
+  if(t.id === "wzNeuerOrdner"){ blattOeffnen("neu"); return; }
+  if(t.id === "wzDaten"){ blattOeffnen("daten"); return; }
+  if(t.dataset.tab){ tabWechseln(t.dataset.tab); return; }
+  if(t.dataset.akt === "lieferung-zu"){ $("sheetLieferung").classList.remove("offen"); return; }
+  if(t.id === "wzLieferung"){ lieferOeffnen(); return; }
+  if(t.id === "btnLieferung"){ lieferungBuchen(); return; }
+  if(t.id === "wzWarn"){ blattOeffnen("warn"); return; }
+  if(t.id === "wzAufraeumen"){ leereEntfernen(); return; }
+  if(t.dataset.lschnitt){
+    lieferSchnitt = (lieferSchnitt === t.dataset.lschnitt) ? "" : t.dataset.lschnitt;
+    renderLieferung(); return;
+  }
+  if(t.id === "fFarbWahl"){ blattOeffnen("farbkarte", "fTextilFarbe"); return; }
+  if(t.id === "lFarbWahl"){ blattOeffnen("farbkarte", "lFarbe"); return; }
+  if(t.dataset.fwahl !== undefined){
+    const zielId = blattDaten;
+    blattSchliessen();
+    const el = $(zielId);
+    if(el){
+      el.value = t.dataset.fwahl;
+      renderFarbKnoepfe();
+      if(zielId === "fTextilFarbe") renderBestandHinweis();
+    }
+    return;
+  }
+  if(t.dataset.warnab){
+    warnAb = Number(t.dataset.warnab);
+    blattSchliessen(); bestandSichern(); renderAlles();
+    toast("Erinnerung, sobald nur noch " + warnAb + " frei sind"); return;
+  }
+  if(t.dataset.bplus){ mengeAendern(t.dataset.bplus, 1); return; }
+  if(t.dataset.bminus){ mengeAendern(t.dataset.bminus, -1); return; }
+  if(t.dataset.bmenge){ blattOeffnen("menge", t.dataset.bmenge); return; }
+  if(t.dataset.daten === "export"){ datenExportieren(); return; }
+  if(t.dataset.daten === "fotosweg"){ fotosAufraeumen(); return; }
+  if(t.id === "speicherBand"){ blattOeffnen("daten"); return; }
+  if(t.dataset.daten === "import"){
+    if(t.dataset.sicher !== "1"){
+      t.dataset.sicher = "1"; t.textContent = "Ersetzt alles – nochmal tippen";
+      setTimeout(() => { if(t.isConnected){ t.dataset.sicher = ""; t.textContent = "⤒ Sicherung laden"; } }, 3500);
+      return;
+    }
+    $("fImport").click(); return;
+  }
+  if(t.dataset.sortwahl){
+    sortId = t.dataset.sortwahl;
+    blattSchliessen(); renderAlles(); ansichtSichern();
+    toast("Sortiert nach " + SORTIERUNGEN.find(s => s.id === sortId).label);
+    return;
+  }
+  if(t.hasAttribute("data-owahl")){
+    const id = blattDaten; const wahl = t.getAttribute("data-owahl");
+    blattSchliessen(); ordnerZuweisen(id, wahl); return;
+  }
+  if(t.hasAttribute("data-blattok")){ blattBestaetigen(); return; }
+  if(t.dataset.oloeschen){
+    const name = t.dataset.oloeschen;
+    if(t.dataset.sicher !== "1"){
+      t.dataset.sicher = "1"; t.textContent = "Wirklich löschen? Nochmal tippen";
+      setTimeout(() => { if(t.isConnected){ t.dataset.sicher = ""; t.textContent = "Ordner löschen (Aufträge bleiben)"; } }, 3000);
+      return;
+    }
+    blattSchliessen(); ordnerLoeschen(name); return;
+  }
+  if(t.dataset.ordnermehr){ blattOeffnen("ordner", t.dataset.ordnermehr); return; }
+  if(t.dataset.falten){
+    const n = t.dataset.falten;
+    const i = zuOrdner.indexOf(n);
+    if(i === -1) zuOrdner.push(n); else zuOrdner.splice(i,1);
+    renderListe(); ansichtSichern(); return;
+  }
+  if(t.dataset.statuszyklus){ statusZyklus(t.dataset.statuszyklus); return; }
+  if(t.dataset.zahlzyklus){ zahlungZyklus(t.dataset.zahlzyklus); return; }
+  if(t.dataset.detail){ detailZeigen(t.dataset.detail); return; }
+  if(t.id === "fabNeu"){ if(tab === "bestand") lieferOeffnen(); else formOeffnen(null); return; }
+  if(t.dataset.akt === "form-zu"){ formSchliessen(); return; }
+  if(t.dataset.akt === "detail-zu"){ detailSchliessen(); return; }
+  if(t.dataset.akt === "bearbeiten"){ formOeffnen(detailId); return; }
+  if(t.id === "btnSpeichern"){ speichern(); return; }
+  if(t.id === "btnLoeschen"){ loeschen(); return; }
+  if(t.id === "fotoPlus"){ $("fFotos").click(); return; }
+  if(t.dataset.fotoweg !== undefined){ formFotos.splice(Number(t.dataset.fotoweg),1); renderFotoReihe(); return; }
+  if(t.dataset.fstatus){ formStatus = t.dataset.fstatus; renderFormStatus(); return; }
+  if(t.dataset.farbart){
+    farbArt = (farbArt === t.dataset.farbart) ? "" : t.dataset.farbart;
+    renderFarben(); if(farbArt) $("fFarbe1").focus(); return;
+  }
+  if(t.dataset.groesse){
+    formGroesse = (formGroesse === t.dataset.groesse) ? "" : t.dataset.groesse;
+    renderGroesse(); renderBestandHinweis(); return;
+  }
+  if(t.dataset.schnitt){
+    formSchnitt = (formSchnitt === t.dataset.schnitt) ? "" : t.dataset.schnitt;
+    renderGroesse(); renderBestandHinweis(); return;
+  }
+  if(t.dataset.platz){
+    platzSonst = false;
+    platzWert = (platzWert === t.dataset.platz) ? "" : t.dataset.platz;
+    renderPlatz(); return;
+  }
+  if(t.dataset.platzSonst){
+    platzSonst = true;
+    if(PLATZ_VORGABEN.indexOf(platzWert) !== -1) platzWert = "";
+    renderPlatz();
+    const inp = $("fPlatzSonst"); inp.value = platzWert; inp.focus();
+    return;
+  }
+  if(t.dataset.zahlung){ formZahlung = t.dataset.zahlung; renderZahlung(); return; }
+  if(t.dataset.dzahl){ zahlungSetzen(t.dataset.dzahl); return; }
+  if(t.dataset.status){ statusSetzen(t.dataset.status); return; }
+  if(t.dataset.gross !== undefined){
+    const box = $("detailFotos");
+    $("viewerBild").src = (box && box._fotos) ? box._fotos[Number(t.dataset.gross)] : t.src;
+    $("viewer").classList.add("offen");
+    return;
+  }
+});
+
+$("blatt").addEventListener("click", e => { if(e.target.id === "blatt") blattSchliessen(); });
+$("blatt").addEventListener("keydown", e => {
+  if(e.key === "Enter" && e.target.id === "blattEingabe"){ e.preventDefault(); blattBestaetigen(); }
+});
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && $("blatt").classList.contains("offen")) blattSchliessen();
+});
+$("viewer").addEventListener("click", () => $("viewer").classList.remove("offen"));
+/* Beim Wegwischen der App nichts Offenes liegen lassen */
+window.addEventListener("pagehide", alleSofortSchreiben);
+document.addEventListener("visibilitychange", () => { if(document.hidden) alleSofortSchreiben(); });
+$("fDeadline").addEventListener("change", renderFristHinweis);
+$("fDeadline").addEventListener("input", renderFristHinweis);
+$("fPlatzSonst").addEventListener("input", e => { platzWert = e.target.value; });
+function textilGeaendert(){ renderGroesse(); renderBestandHinweis(); }
+$("fTextil").addEventListener("input", textilGeaendert);
+$("fTextil").addEventListener("change", textilGeaendert);
+$("fTextilFarbe").addEventListener("input", () => { renderBestandHinweis(); renderFarbKnoepfe(); });
+$("lFarbe").addEventListener("input", renderFarbKnoepfe);
+$("fAnzahl").addEventListener("input", renderBestandHinweis);
+$("lTextil").addEventListener("input", renderLieferung);
+$("lTextil").addEventListener("change", renderLieferung);
+$("fImport").addEventListener("change", e => {
+  if(e.target.files && e.target.files[0]) datenImportieren(e.target.files[0]);
+  e.target.value = "";
+});
+$("fFotos").addEventListener("change", e => {
+  if(e.target.files && e.target.files.length) fotosHinzufuegen([...e.target.files]);
+  e.target.value = "";
+});
+
+/* ── Start ─────────────────────────────── */
+function migrieren(){
+  let geaendert = false;
+  for(const a of auftraege){
+    if(a.status === "arbeit"){ a.status = "offen"; geaendert = true; }
+    if(!a.zahlung){ a.zahlung = a.gezahlt ? "gezahlt" : "offen"; delete a.gezahlt; geaendert = true; }
+    if(a.garn !== undefined || a.garnArt !== undefined){
+      if(!a.farbe1 && a.garn) a.farbe1 = a.garn;
+      if(!a.farbArt) a.farbArt = a.garn ? "einfarbig" : "";
+      delete a.garn; delete a.garnArt; geaendert = true;
+    }
+    if(a.farbArt === "mehrfarbig"){ a.farbArt = "zweifarbig"; geaendert = true; }
+    if(a.gruppe !== undefined){ if(!a.ordner) a.ordner = a.gruppe; delete a.gruppe; geaendert = true; }
+    if(a.ordner === undefined){ a.ordner = ""; geaendert = true; }
+    if(a.anzahl === undefined){ a.anzahl = 1; geaendert = true; }
+    if(a.entnommen === undefined){ a.entnommen = null; geaendert = true; }
+  }
+  return geaendert;
+}
+(async function start(){
+  await speicherPruefen();
+  datalistFuellen("textilListe", TEXTILIEN);
+  farbListeFuellen();
+  rotAlleNeu();
+
+  const ansicht = await spLies(ANSICHT_KEY);
+  if(ansicht){
+    if(ansicht.sortId && SORTIERUNGEN.some(s => s.id === ansicht.sortId)) sortId = ansicht.sortId;
+    if(Array.isArray(ansicht.zuOrdner)) zuOrdner = ansicht.zuOrdner;
+    else if(Array.isArray(ansicht.zuGruppen)) zuOrdner = ansicht.zuGruppen;
+  }
+  const gespeicherteOrdner = await spLies(ORDNER_KEY);
+  if(Array.isArray(gespeicherteOrdner)) ordner = gespeicherteOrdner;
+
+  const lager = await spLies(BESTAND_KEY);
+  if(lager){
+    if(Array.isArray(lager.artikel)) bestand = lager.artikel;
+    if(typeof lager.warnAb === "number") warnAb = lager.warnAb;
+  }
+
+  const daten = await spLies(INDEX_KEY);
+  if(Array.isArray(daten)) auftraege = daten;
+  if(migrieren()){ try{ await spSchreib(INDEX_KEY, auftraege); }catch(e){} }
+
+  /* Ordnernamen aus bestehenden Aufträgen übernehmen */
+  let neu = false;
+  for(const a of auftraege){
+    const o = (a.ordner || "").trim();
+    if(o && ordner.indexOf(o) === -1){ ordner.push(o); neu = true; }
+  }
+  if(neu) await ordnerSichern();
+
+  renderAlles();
+})();
+</script>
+</body>
+</html>
