@@ -184,6 +184,13 @@
   }
   .wahl-chip.aktiv{background:var(--wf, var(--tinte)); border-color:var(--wf, var(--tinte)); color:#fff; font-weight:600; border-style:solid}
   .wahl-chip.sonst{border-style:dashed; color:var(--druck-blau)}
+  .wahl-chip.groesse-da{background:#f2f7f3; border-color:#bcd3c2; color:var(--druck-gruen)}
+  .wahl-chip.groesse-knapp{background:#f7e9d8; border-color:#e6d0ae; color:#8a5a17}
+  .wahl-chip.groesse-leer{background:#f6e3e5; border-color:#e3c2c7; color:var(--beere)}
+  .wahl-chip.groesse-da.aktiv, .wahl-chip.groesse-knapp.aktiv, .wahl-chip.groesse-leer.aktiv{
+    background:var(--druck-blau); border-color:var(--druck-blau); color:#fff;
+  }
+  .bestand-zahl{margin-left:3px; font-size:11px; font-weight:700; opacity:.85}
 
   .status-schalter{display:flex; gap:6px; flex-wrap:wrap}
   .status-knopf{
@@ -396,9 +403,15 @@
       <div id="farbWrap" hidden style="margin-top:11px">
         <label for="fFarbe1" id="farbe1Label">Farbe</label>
         <input type="text" id="fFarbe1" autocomplete="off">
+        <div class="wahl-chips" style="margin-top:8px">
+          <button class="wahl-chip sonst" id="fDruckFarbWahl1" style="--wf:var(--druck-blau)">Farbkarte …</button>
+        </div>
         <div id="farbe2Wrap" hidden style="margin-top:11px">
           <label for="fFarbe2">Zweite Farbe</label>
           <input type="text" id="fFarbe2" autocomplete="off">
+          <div class="wahl-chips" style="margin-top:8px">
+            <button class="wahl-chip sonst" id="fDruckFarbWahl2" style="--wf:var(--druck-blau)">Farbkarte …</button>
+          </div>
         </div>
       </div>
     </div>
@@ -426,9 +439,9 @@
     </div>
 
     <div class="feld" id="groesseFeld" hidden>
-      <span class="feld-titel">Größe &amp; Schnitt</span>
+      <span class="feld-titel">Größe</span>
       <div class="wahl-chips" id="groesseChips"></div>
-      <div class="wahl-chips" id="schnittChips" style="margin-top:8px"></div>
+      <p class="hinweis">Grün ist verfügbar, Orange ist zu knapp für die gewählte Anzahl, Rot ist nicht verfügbar.</p>
     </div>
 
     <div class="feld">
@@ -496,10 +509,6 @@
         <button class="wahl-chip sonst" id="lFarbWahl" style="--wf:var(--druck-blau)">Farbkarte …</button>
       </div>
     </div>
-    <div class="feld" id="lSchnittFeld">
-      <span class="feld-titel">Schnitt</span>
-      <div class="wahl-chips" id="lSchnittChips"></div>
-    </div>
     <div class="feld">
       <span class="feld-titel" id="lRasterTitel">Stück je Größe</span>
       <div class="raster" id="lRaster"></div>
@@ -521,7 +530,7 @@
 const STATUS = {
   offen:      { label:"Offen",     farbe:"#c99a3a", hell:"#dcb15c" },
   fertig:     { label:"Fertig",    farbe:"#4a7c59", hell:"#6c9a79" },
-  uebergeben: { label:"Übergeben", farbe:"#a2a7ad", hell:"#bfc3c8" }
+  uebergeben: { label:"Erledigt",  farbe:"#a2a7ad", hell:"#bfc3c8" }
 };
 const STATUS_REIHE = ["offen","fertig","uebergeben"];
 const ZAHLUNG = {
@@ -532,7 +541,6 @@ const ZAHLUNG = {
 const ZAHLUNG_REIHE = ["offen","gezahlt","geschenk"];
 const FARB_ARTEN = { einfarbig:"Einfarbig", zweifarbig:"Zweifarbig" };
 const GROESSEN = ["XS","S","M","L","XL","XXL","3XL"];
-const SCHNITTE = ["Unisex","Frauenschnitt"];
 const KLEIDUNG_WOERTER = ["shirt","hoodie","sweat","pulli","pullover","longsleeve","polo","body","jacke","weste","kleid","hemd","bluse","top","trikot","strampler","anzug","hose","shorts","rock","bademantel","strick","fleece","poncho"];
 function istKleidung(txt){
   const s = String(txt || "").toLowerCase().replace(/[\s\-\/]/g, "");
@@ -555,6 +563,16 @@ const TEXTILIEN = [
   "Hundehalstuch","Hundedecke","Katzenkissen",
   "Vorhang","Wimpel","Wandbehang","Lesezeichen (Filz)","Nadelkissen",
   "Patch / Aufnäher","Stoffstück / Testlappen","Klopapier (Scherzartikel)"
+];
+
+const BASIS_FARBEN = [
+  ["Schwarz","#1b1b1b"], ["Weiß","#ffffff"], ["Naturweiß","#ece7dc"],
+  ["Grau","#b0b0ac"], ["Anthrazit","#3a3a3c"], ["Beige","#e6dfcf"],
+  ["Braun","#6b4a37"], ["Rot","#c62128"], ["Bordeaux","#6a2333"],
+  ["Orange","#ef9036"], ["Gelb","#f3cf4a"], ["Grün","#6f9e52"],
+  ["Waldgrün","#17493a"], ["Olive","#6e6c4e"], ["Blau","#1f5fae"],
+  ["Marineblau","#26304a"], ["Türkis","#56b7ad"], ["Petrol","#1f4d4a"],
+  ["Rosa","#edc6c8"], ["Violett","#6b4b8a"]
 ];
 
 const BEISPIELE = {
@@ -582,10 +600,7 @@ const BEISPIELE = {
   ],
   textil: TEXTILIEN,
   get textilFarbe(){
-    const aus = [];
-    for(const karte of FARBKARTEN)
-      for(const f of karte.farben) if(aus.indexOf(f[0]) === -1) aus.push(f[0]);
-    return aus;
+    return BASIS_FARBEN.map(f => f[0]);
   },
   druckFarbe: ["Schwarz","Weiß","Naturweiß","Marineblau","Royalblau","Rot (Pantone 186 C)","Bordeaux","Orange","Senfgelb","Neongelb","Neonpink","Waldgrün","Salbeigrün","Petrol","Grau","Silber metallic","Gold metallic","Kupfer metallic","Puff-Weiß (Hochdruck)","Softtouch-Schwarz"],
   druckFarbe2: ["Weiß","Schwarz","Gold metallic","Neonorange","Creme","Hellgrau","Rot","Dunkelblau","Senfgelb","Terracotta","Salbeigrün","Kupfer metallic","Petrol","Altrosa","Silber metallic","Beere","Ocker","Türkis","Anthrazit","Naturweiß"]
@@ -636,6 +651,7 @@ const FARB_ALIAS = {
 };
 const FARB_HEX = (function(){
   const m = {};
+  for(const f of BASIS_FARBEN) m[f[0].toLowerCase()] = f[1];
   for(const karte of FARBKARTEN)
     for(const f of karte.farben){
       const k = f[0].trim().toLowerCase();
@@ -660,7 +676,7 @@ const SORTIERUNGEN = [
   { id:"deadline", label:"Deadline",        info:"Dringendes zuerst" },
   { id:"neueste",  label:"Neueste zuerst",  info:"Nach Auftragsdatum" },
   { id:"aelteste", label:"Älteste zuerst",  info:"Nach Auftragsdatum" },
-  { id:"status",   label:"Status",          info:"Offen · Fertig · Übergeben" },
+  { id:"status",   label:"Status",          info:"Offen · Fertig · Erledigt" },
   { id:"name",     label:"Name A–Z",        info:"Nach Person" }
 ];
 const ERLEDIGT = "✓ Erledigt";
@@ -894,8 +910,8 @@ let blattModus = null, blattDaten = null;
 let formFotos = [], formFotosLaden = Promise.resolve();
 let bearbeiteId = null, detailId = null;
 let formStatus = "offen", formZahlung = "offen", farbArt = "";
-let formGroesse = "", formSchnitt = "", platzWert = "", platzSonst = false;
-let bestand = [], warnAb = 2, lieferSchnitt = "", tab = "auftraege";
+let formGroesse = "", platzWerte = [], platzSonst = false;
+let bestand = [], warnAb = 2, tab = "auftraege";
 
 /* ── Helfer ────────────────────────────── */
 const $ = id => document.getElementById(id);
@@ -913,10 +929,7 @@ function tageBis(iso){
   return Math.round((new Date(iso + "T00:00:00") - heute) / 86400000);
 }
 function istAktiv(a){ return a.status === "offen"; }
-/* Erledigt = übergeben UND bezahlt; bei Geschenken reicht übergeben */
-function istErledigt(a){
-  return a.status === "uebergeben" && (a.zahlung === "gezahlt" || a.zahlung === "geschenk");
-}
+function istErledigt(a){ return a.status === "uebergeben"; }
 function fristInfo(a){
   if(!istAktiv(a)) return null;
   if(!a.deadline) return { text:"Keine Deadline", klasse:"keine-frist" };
@@ -936,6 +949,13 @@ function farbText(a){
   if(a.farbArt === "einfarbig") return f1 || "Einfarbig";
   return f1;
 }
+function platzierungenAus(a){
+  const werte = Array.isArray(a && a.platzierungen)
+    ? a.platzierungen
+    : ((a && a.platzierung) ? [a.platzierung] : []);
+  return werte.map(w => String(w || "").trim()).filter((w,i,liste) => w && liste.indexOf(w) === i);
+}
+function platzierungenText(a){ return platzierungenAus(a).join(" + "); }
 function toast(txt){
   const t = $("toast");
   t.textContent = txt; t.classList.add("zeig");
@@ -985,9 +1005,10 @@ function sortiert(liste){
 
 /* ── Liste ─────────────────────────────── */
 function renderChips(){
-  const zaehl = s => auftraege.filter(a => a.status === s).length;
-  let html = chipHtml("alle", "Alle", auftraege.length);
-  for(const s of STATUS_REIHE) html += chipHtml(s, STATUS[s].label, zaehl(s));
+  const aktive = auftraege.filter(a => !istErledigt(a));
+  const zaehl = s => aktive.filter(a => a.status === s).length;
+  let html = chipHtml("alle", "Alle", aktive.length);
+  for(const s of ["offen","fertig"]) html += chipHtml(s, STATUS[s].label, zaehl(s));
   $("chips").innerHTML = html;
   $("sortLabel").textContent = (SORTIERUNGEN.find(s => s.id === sortId) || SORTIERUNGEN[0]).label;
 }
@@ -1001,7 +1022,7 @@ function karteHtml(a, imArchiv){
   const frist = fristInfo(a);
   const farbe = farbText(a);
   const unter = [auftragAnzahl(a) > 1 ? auftragAnzahl(a) + "×" : "", a.textil, a.textilFarbe,
-                 a.groesse ? "Gr. " + a.groesse : "", a.schnitt, a.platzierung].filter(Boolean).join(" · ");
+                 a.groesse ? "Gr. " + a.groesse : "", platzierungenText(a)].filter(Boolean).join(" · ");
   const metaTeile = [];
   if(a.datum) metaTeile.push("Auftrag " + fmtDatum(a.datum));
   if(!istAktiv(a) && a.deadline) metaTeile.push("Deadline war " + fmtDatum(a.deadline));
@@ -1074,7 +1095,7 @@ function renderListe(){
 
   const offenN = auftraege.filter(istAktiv).length;
   const ohneFrist = auftraege.filter(a => istAktiv(a) && !a.deadline).length;
-  const unbezahlt = auftraege.filter(a => a.zahlung === "offen" && a.status !== "offen").length;
+  const unbezahlt = auftraege.filter(a => !istErledigt(a) && a.zahlung === "offen" && a.status !== "offen").length;
   let zus;
   if(auftraege.length === 0) zus = "Dein Überblick über alle Druckprojekte";
   else if(offenN === 0) zus = "Alles fertig – nichts offen 🎉";
@@ -1182,40 +1203,45 @@ async function ordnerZuweisen(id, name){
 }
 
 /* ── Bestand ───────────────────────────── */
-/* Ein Posten ist eine Kombination aus Textil, Farbe, Schnitt und Größe.
+/* Ein Posten ist eine Kombination aus Textil, Farbe und Größe.
    Lieferungen zählen dazu, fertige Aufträge buchen ab, offene gelten als reserviert. */
 const WARN_STUFEN = [1,2,3,5];
 function normal(x){ return String(x || "").trim().replace(/\s+/g, " ").toLowerCase(); }
-function bKey(textil, farbe, groesse, schnitt){
-  return [normal(textil), normal(farbe), normal(groesse), normal(schnitt)].join("|");
+function bKey(textil, farbe, groesse){
+  return [normal(textil), normal(farbe), normal(groesse)].join("|");
 }
-function postenKey(p){ return bKey(p.textil, p.farbe, p.groesse, p.schnitt); }
+function postenKey(p){ return bKey(p.textil, p.farbe, p.groesse); }
 function postenFinden(key){ return key ? (bestand.find(p => postenKey(p) === key) || null) : null; }
 function postenName(p){
-  return [p.textil, p.farbe, p.schnitt, p.groesse ? "Gr. " + p.groesse : ""].filter(Boolean).join(" · ");
+  return [p.textil, p.farbe, p.groesse ? "Gr. " + p.groesse : ""].filter(Boolean).join(" · ");
 }
 function auftragAnzahl(a){ const n = parseInt(a.anzahl, 10); return n > 0 ? n : 1; }
 function auftragKey(a){
   const t = (a.textil || "").trim(), f = (a.textilFarbe || "").trim();
-  return (t && f) ? bKey(t, f, a.groesse, a.schnitt) : "";
+  return (t && f) ? bKey(t, f, a.groesse) : "";
 }
 function istVerbraucht(a){ return a.status === "fertig" || a.status === "uebergeben"; }
-/* Passt der Schnitt nicht exakt und bleibt trotzdem genau ein Posten übrig, wird der genommen –
-   sonst müsste man „Unisex“ überall gleich tippen, damit es zusammenfindet. */
-function auftragPostenKey(a){
-  const key = auftragKey(a);
-  if(!key || postenFinden(key)) return key;
-  const teile = key.split("|");
-  const treffer = bestand.filter(p => normal(p.textil) === teile[0] &&
-                                      normal(p.farbe) === teile[1] &&
-                                      normal(p.groesse) === teile[2]);
-  return treffer.length === 1 ? postenKey(treffer[0]) : key;
-}
+function auftragPostenKey(a){ return auftragKey(a); }
 function reserviert(key){
   if(!key) return 0;
   return auftraege.reduce((n,a) => n + (istAktiv(a) && auftragPostenKey(a) === key ? auftragAnzahl(a) : 0), 0);
 }
 function freiVon(p){ return p.menge - reserviert(postenKey(p)); }
+function freiFuerForm(p){
+  let frei = freiVon(p);
+  const aktuell = bearbeiteId ? auftraege.find(a => a.id === bearbeiteId) : null;
+  if(!aktuell) return frei;
+  const key = postenKey(p);
+  if(istAktiv(aktuell) && auftragPostenKey(aktuell) === key) frei += auftragAnzahl(aktuell);
+  else if(aktuell.entnommen && aktuell.entnommen.key === key) frei += aktuell.entnommen.menge || 0;
+  return frei;
+}
+function reserviertFuerForm(p){
+  let zahl = reserviert(postenKey(p));
+  const aktuell = bearbeiteId ? auftraege.find(a => a.id === bearbeiteId) : null;
+  if(aktuell && istAktiv(aktuell) && auftragPostenKey(aktuell) === postenKey(p)) zahl -= auftragAnzahl(aktuell);
+  return Math.max(0, zahl);
+}
 function knappePosten(){ return bestand.filter(p => freiVon(p) <= warnAb); }
 function bestandSichern(){ plane(BESTAND_KEY, () => ({ artikel:bestand, warnAb })); }
 
@@ -1258,18 +1284,19 @@ function farbKnopf(id, wert){
 function renderFarbKnoepfe(){
   farbKnopf("fFarbWahl", $("fTextilFarbe").value);
   farbKnopf("lFarbWahl", $("lFarbe").value);
+  farbKnopf("fDruckFarbWahl1", $("fFarbe1").value);
+  farbKnopf("fDruckFarbWahl2", $("fFarbe2").value);
 }
 function farbListeFuellen(){
   const aus = [];
   for(const p of bestand) if(p.farbe && aus.indexOf(p.farbe) === -1) aus.push(p.farbe);
-  for(const f of BEISPIELE.textilFarbe) if(aus.indexOf(f) === -1) aus.push(f);
+  for(const f of BASIS_FARBEN.map(x => x[0])) if(aus.indexOf(f) === -1) aus.push(f);
   datalistFuellen("farbListe", aus);
 }
 
-/* Kurzname für den Streifen: „Weiß M“ statt der ganzen Kombination */
+/* Auf der Auftragsseite steht immer dabei, um welches Textil es sich handelt. */
 function kurzName(p){
-  const rest = p.groesse || String(p.textil || "").split(/[\s\/]/)[0];
-  return [p.farbe, rest].filter(Boolean).join(" ");
+  return [p.textil, p.farbe, p.groesse ? "Gr. " + p.groesse : ""].filter(Boolean).join(" · ");
 }
 function renderStreifen(){
   const el = $("lagerStreifen");
@@ -1292,8 +1319,8 @@ function groessenRang(g){ const i = GROESSEN.indexOf(g); return i === -1 ? (g ? 
 function bestandGruppen(){
   const map = new Map();
   for(const p of bestand){
-    const k = [normal(p.textil), normal(p.farbe), normal(p.schnitt)].join("|");
-    if(!map.has(k)) map.set(k, { titel:[p.textil, p.farbe, p.schnitt].filter(Boolean).join(" · "), farbe:p.farbe, posten:[] });
+    const k = [normal(p.textil), normal(p.farbe)].join("|");
+    if(!map.has(k)) map.set(k, { titel:[p.textil, p.farbe].filter(Boolean).join(" · "), farbe:p.farbe, posten:[] });
     map.get(k).posten.push(p);
   }
   const gruppen = Array.from(map.values());
@@ -1383,10 +1410,6 @@ function lieferOeffnen(){
 }
 function renderLieferung(){
   const kleidung = istKleidung($("lTextil").value);
-  $("lSchnittFeld").hidden = !kleidung;
-  $("lSchnittChips").innerHTML = SCHNITTE.map(sc =>
-    '<button class="wahl-chip' + (lieferSchnitt === sc ? ' aktiv' : '') + '" data-lschnitt="' + sc +
-    '" style="--wf:var(--druck-blau)">' + sc + '</button>').join("");
   $("lRasterTitel").textContent = kleidung ? "Stück je Größe" : "Anzahl";
   const alt = {};
   $("lRaster").querySelectorAll("input").forEach(i => { alt[i.dataset.groesse] = i.value; });
@@ -1400,15 +1423,14 @@ async function lieferungBuchen(){
   const textil = $("lTextil").value.trim(), farbe = $("lFarbe").value.trim();
   if(!textil || !farbe){ $("lieferFehler").textContent = "Textil und Farbe angeben."; return; }
   const kleidung = istKleidung(textil);
-  const schnitt = kleidung ? lieferSchnitt : "";
   let summe = 0, zeilen = 0;
   for(const inp of $("lRaster").querySelectorAll("input")){
     const n = parseInt(inp.value, 10);
     if(!n || n <= 0) continue;
     const groesse = kleidung ? inp.dataset.groesse : "";
-    const key = bKey(textil, farbe, groesse, schnitt);
+    const key = bKey(textil, farbe, groesse);
     let p = postenFinden(key);
-    if(!p){ p = { id:neueId(), textil, farbe, groesse, schnitt, menge:0 }; bestand.push(p); }
+    if(!p){ p = { id:neueId(), textil, farbe, groesse, menge:0 }; bestand.push(p); }
     p.menge += n; summe += n; zeilen++;
   }
   if(!summe){ $("lieferFehler").textContent = "Trag mindestens eine Anzahl ein."; return; }
@@ -1561,8 +1583,8 @@ function renderBlatt(){
     const imLager = [];
     for(const p of bestand) if(p.farbe && imLager.indexOf(p.farbe) === -1) imLager.push(p.farbe);
     html = '<h3>Farbkarte</h3><p class="klein">Tippen übernimmt die Farbe</p>' +
-      gruppe("Im Bestand", imLager) +
-      FARBKARTEN.map(k => gruppe(k.marke, k.farben.map(f => f[0]))).join("");
+      ((blattDaten === "fTextilFarbe" || blattDaten === "lFarbe") ? gruppe("Im Bestand", imLager) : "") +
+      gruppe("Grundfarben", BASIS_FARBEN.map(f => f[0]));
   }
   else if(blattModus === "warn"){
     html = '<h3>Erinnerung</h3><p class="klein">Melden, sobald frei nur noch …</p>' +
@@ -1682,16 +1704,21 @@ function renderGroesse(){
   const zeigen = istKleidung($("fTextil").value);
   $("groesseFeld").hidden = !zeigen;
   if(!zeigen) return;
-  $("groesseChips").innerHTML = GROESSEN.map(g =>
-    '<button class="wahl-chip' + (formGroesse === g ? ' aktiv' : '') + '" data-groesse="' + g + '">' + g + '</button>'
-  ).join("");
-  $("schnittChips").innerHTML = SCHNITTE.map(s =>
-    '<button class="wahl-chip' + (formSchnitt === s ? ' aktiv' : '') + '" data-schnitt="' + s + '" style="--wf:var(--druck-blau)">' + s + '</button>'
-  ).join("");
+  const textil = $("fTextil").value.trim(), farbe = $("fTextilFarbe").value.trim();
+  const bestandBekannt = !!(textil && farbe);
+  const noetig = Math.max(1, parseInt($("fAnzahl").value, 10) || 1);
+  $("groesseChips").innerHTML = GROESSEN.map(g => {
+    const p = bestandBekannt ? postenFinden(bKey(textil, farbe, g)) : null;
+    const frei = p ? freiFuerForm(p) : 0;
+    const lagerKlasse = !bestandBekannt ? "" : (frei <= 0 ? " groesse-leer" : (frei < noetig ? " groesse-knapp" : " groesse-da"));
+    const zahl = bestandBekannt ? '<span class="bestand-zahl">· ' + frei + ' frei</span>' : "";
+    return '<button class="wahl-chip' + lagerKlasse + (formGroesse === g ? ' aktiv' : '') +
+      '" data-groesse="' + g + '">' + g + zahl + '</button>';
+  }).join("");
 }
 function renderPlatz(){
   let html = PLATZ_VORGABEN.map(p =>
-    '<button class="wahl-chip' + (!platzSonst && platzWert === p ? ' aktiv' : '') + '" data-platz="' + esc(p) + '">' + esc(p) + '</button>'
+    '<button class="wahl-chip' + (platzWerte.indexOf(p) !== -1 ? ' aktiv' : '') + '" data-platz="' + esc(p) + '">' + esc(p) + '</button>'
   ).join("");
   html += '<button class="wahl-chip sonst' + (platzSonst ? ' aktiv' : '') + '" data-platz-sonst="1" style="--wf:var(--druck-blau)">Andere Stelle …</button>';
   $("platzChips").innerHTML = html;
@@ -1710,13 +1737,13 @@ function renderBestandHinweis(){
   el.style.color = "";
   if(!bestand.length || !textil || !farbe){ el.textContent = ""; return; }
   const kleidung = istKleidung(textil);
+  if(kleidung && !formGroesse){ el.textContent = "Größe auswählen. Die Farbcodes zeigen den verfügbaren Bestand."; return; }
   const p = postenFinden(auftragPostenKey({
     textil, textilFarbe:farbe,
-    groesse: kleidung ? formGroesse : "",
-    schnitt: kleidung ? formSchnitt : ""
+    groesse: kleidung ? formGroesse : ""
   }));
   if(!p){ el.textContent = "Für diese Kombination ist kein Bestand erfasst."; return; }
-  const res = reserviert(postenKey(p)), frei = p.menge - res;
+  const res = reserviertFuerForm(p), frei = freiFuerForm(p);
   const noetig = Math.max(1, parseInt($("fAnzahl").value, 10) || 1);
   el.textContent = "Bestand: " + p.menge + " Stück" + (res ? " · " + res + " reserviert" : "") + " · " + frei + " frei";
   if(frei < noetig) el.style.color = "var(--beere)";
@@ -1753,10 +1780,11 @@ function formOeffnen(id){
   formZahlung = a ? (a.zahlung || "offen") : "offen";
   farbArt     = a ? (a.farbArt || "") : "";
   formGroesse = a ? (a.groesse || "") : "";
-  formSchnitt = a ? (a.schnitt || "") : "";
-  platzWert   = a ? (a.platzierung || "") : "";
-  platzSonst  = !!(platzWert && PLATZ_VORGABEN.indexOf(platzWert) === -1);
-  $("fPlatzSonst").value = platzSonst ? platzWert : "";
+  const gespeichertePlaetze = platzierungenAus(a);
+  platzWerte = gespeichertePlaetze.filter(p => PLATZ_VORGABEN.indexOf(p) !== -1);
+  const sonstigePlaetze = gespeichertePlaetze.filter(p => PLATZ_VORGABEN.indexOf(p) === -1);
+  platzSonst = sonstigePlaetze.length > 0;
+  $("fPlatzSonst").value = sonstigePlaetze.join(", ");
 
   rotAlleNeu();
   renderFormStatus(); renderFarben(); renderGroesse(); renderPlatz(); renderZahlung();
@@ -1851,6 +1879,9 @@ async function speichern(){
   const id = bearbeiteId || neueId();
   const kleidung = istKleidung($("fTextil").value);
   const ordnerName = $("fOrdner").value.trim();
+  const platzierungen = platzWerte.slice();
+  const anderePlatzierung = platzSonst ? $("fPlatzSonst").value.trim() : "";
+  if(anderePlatzierung && platzierungen.indexOf(anderePlatzierung) === -1) platzierungen.push(anderePlatzierung);
   const eintrag = {
     id,
     person: person || "Ohne Namen",
@@ -1862,8 +1893,7 @@ async function speichern(){
     textil:      $("fTextil").value.trim(),
     textilFarbe: $("fTextilFarbe").value.trim(),
     groesse:     kleidung ? formGroesse : "",
-    schnitt:     kleidung ? formSchnitt : "",
-    platzierung: platzSonst ? $("fPlatzSonst").value.trim() : platzWert,
+    platzierungen,
     datum:       $("fDatum").value || heuteISO(),
     deadline:    $("fDeadline").value || "",
     status:      formStatus,
@@ -1918,8 +1948,8 @@ function detailZeilen(a){
     ["Druckfarbe", esc(farbText(a)), false],
     ["Anzahl", esc(auftragAnzahl(a) + " Stück"), false],
     ["Textil", farbPunktHtml(a.textilFarbe) + esc([a.textil, a.textilFarbe].filter(Boolean).join(" · ")), false],
-    ["Größe", esc([a.groesse ? "Gr. " + a.groesse : "", a.schnitt].filter(Boolean).join(" · ")), false],
-    ["Platzierung", esc(a.platzierung), false],
+    ["Größe", esc(a.groesse ? "Gr. " + a.groesse : ""), false],
+    ["Platzierungen", esc(platzierungenText(a)), false],
     ["Auftrag vom", esc(fmtDatum(a.datum)), false],
     ["Deadline", a.deadline ? esc(fmtDatum(a.deadline)) : "Keine Deadline gesetzt", !a.deadline],
     ["Bezahlung", esc(zahlLabel), false],
@@ -2069,12 +2099,10 @@ document.addEventListener("click", e => {
   if(t.id === "btnLieferung"){ lieferungBuchen(); return; }
   if(t.id === "wzWarn"){ blattOeffnen("warn"); return; }
   if(t.id === "wzAufraeumen"){ leereEntfernen(); return; }
-  if(t.dataset.lschnitt){
-    lieferSchnitt = (lieferSchnitt === t.dataset.lschnitt) ? "" : t.dataset.lschnitt;
-    renderLieferung(); return;
-  }
   if(t.id === "fFarbWahl"){ blattOeffnen("farbkarte", "fTextilFarbe"); return; }
   if(t.id === "lFarbWahl"){ blattOeffnen("farbkarte", "lFarbe"); return; }
+  if(t.id === "fDruckFarbWahl1"){ blattOeffnen("farbkarte", "fFarbe1"); return; }
+  if(t.id === "fDruckFarbWahl2"){ blattOeffnen("farbkarte", "fFarbe2"); return; }
   if(t.dataset.fwahl !== undefined){
     const zielId = blattDaten;
     blattSchliessen();
@@ -2082,7 +2110,7 @@ document.addEventListener("click", e => {
     if(el){
       el.value = t.dataset.fwahl;
       renderFarbKnoepfe();
-      if(zielId === "fTextilFarbe") renderBestandHinweis();
+      if(zielId === "fTextilFarbe"){ renderGroesse(); renderBestandHinweis(); }
     }
     return;
   }
@@ -2152,20 +2180,16 @@ document.addEventListener("click", e => {
     formGroesse = (formGroesse === t.dataset.groesse) ? "" : t.dataset.groesse;
     renderGroesse(); renderBestandHinweis(); return;
   }
-  if(t.dataset.schnitt){
-    formSchnitt = (formSchnitt === t.dataset.schnitt) ? "" : t.dataset.schnitt;
-    renderGroesse(); renderBestandHinweis(); return;
-  }
   if(t.dataset.platz){
-    platzSonst = false;
-    platzWert = (platzWert === t.dataset.platz) ? "" : t.dataset.platz;
+    const i = platzWerte.indexOf(t.dataset.platz);
+    if(i === -1) platzWerte.push(t.dataset.platz); else platzWerte.splice(i,1);
     renderPlatz(); return;
   }
   if(t.dataset.platzSonst){
-    platzSonst = true;
-    if(PLATZ_VORGABEN.indexOf(platzWert) !== -1) platzWert = "";
+    platzSonst = !platzSonst;
     renderPlatz();
-    const inp = $("fPlatzSonst"); inp.value = platzWert; inp.focus();
+    const inp = $("fPlatzSonst");
+    if(platzSonst) inp.focus();
     return;
   }
   if(t.dataset.zahlung){ formZahlung = t.dataset.zahlung; renderZahlung(); return; }
@@ -2192,13 +2216,14 @@ window.addEventListener("pagehide", alleSofortSchreiben);
 document.addEventListener("visibilitychange", () => { if(document.hidden) alleSofortSchreiben(); });
 $("fDeadline").addEventListener("change", renderFristHinweis);
 $("fDeadline").addEventListener("input", renderFristHinweis);
-$("fPlatzSonst").addEventListener("input", e => { platzWert = e.target.value; });
 function textilGeaendert(){ renderGroesse(); renderBestandHinweis(); }
 $("fTextil").addEventListener("input", textilGeaendert);
 $("fTextil").addEventListener("change", textilGeaendert);
-$("fTextilFarbe").addEventListener("input", () => { renderBestandHinweis(); renderFarbKnoepfe(); });
+$("fTextilFarbe").addEventListener("input", () => { renderGroesse(); renderBestandHinweis(); renderFarbKnoepfe(); });
 $("lFarbe").addEventListener("input", renderFarbKnoepfe);
-$("fAnzahl").addEventListener("input", renderBestandHinweis);
+$("fFarbe1").addEventListener("input", renderFarbKnoepfe);
+$("fFarbe2").addEventListener("input", renderFarbKnoepfe);
+$("fAnzahl").addEventListener("input", () => { renderGroesse(); renderBestandHinweis(); });
 $("lTextil").addEventListener("input", renderLieferung);
 $("lTextil").addEventListener("change", renderLieferung);
 $("fImport").addEventListener("change", e => {
@@ -2213,6 +2238,21 @@ $("fFotos").addEventListener("change", e => {
 /* ── Start ─────────────────────────────── */
 function migrieren(){
   let geaendert = false;
+
+  const bestandZusammen = new Map();
+  for(const p of bestand){
+    if(Object.prototype.hasOwnProperty.call(p, "schnitt")){ delete p.schnitt; geaendert = true; }
+    const key = postenKey(p);
+    if(bestandZusammen.has(key)){
+      bestandZusammen.get(key).menge += Number(p.menge) || 0;
+      geaendert = true;
+    }else{
+      p.menge = Number(p.menge) || 0;
+      bestandZusammen.set(key, p);
+    }
+  }
+  bestand = Array.from(bestandZusammen.values());
+
   for(const a of auftraege){
     if(a.status === "arbeit"){ a.status = "offen"; geaendert = true; }
     if(!a.zahlung){ a.zahlung = a.gezahlt ? "gezahlt" : "offen"; delete a.gezahlt; geaendert = true; }
@@ -2226,6 +2266,19 @@ function migrieren(){
     if(a.ordner === undefined){ a.ordner = ""; geaendert = true; }
     if(a.anzahl === undefined){ a.anzahl = 1; geaendert = true; }
     if(a.entnommen === undefined){ a.entnommen = null; geaendert = true; }
+    if(Object.prototype.hasOwnProperty.call(a, "schnitt")){ delete a.schnitt; geaendert = true; }
+
+    const plaetze = platzierungenAus(a);
+    if(!Array.isArray(a.platzierungen) || JSON.stringify(a.platzierungen) !== JSON.stringify(plaetze)){
+      a.platzierungen = plaetze;
+      geaendert = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(a, "platzierung")){ delete a.platzierung; geaendert = true; }
+
+    if(a.entnommen && a.entnommen.key){
+      const neuerKey = auftragKey(a);
+      if(neuerKey && a.entnommen.key !== neuerKey){ a.entnommen.key = neuerKey; geaendert = true; }
+    }
   }
   return geaendert;
 }
@@ -2252,7 +2305,12 @@ function migrieren(){
 
   const daten = await spLies(INDEX_KEY);
   if(Array.isArray(daten)) auftraege = daten;
-  if(migrieren()){ try{ await spSchreib(INDEX_KEY, auftraege); }catch(e){} }
+  if(migrieren()){
+    try{
+      await spSchreib(INDEX_KEY, auftraege);
+      await spSchreib(BESTAND_KEY, { artikel:bestand, warnAb });
+    }catch(e){}
+  }
 
   /* Ordnernamen aus bestehenden Aufträgen übernehmen */
   let neu = false;
@@ -2273,7 +2331,7 @@ if("serviceWorker" in navigator && location.protocol !== "file:"){
     location.reload();
   });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js?v=3", { updateViaCache:"none" })
+    navigator.serviceWorker.register("./service-worker.js?v=4", { updateViaCache:"none" })
       .then(registrierung => registrierung.update())
       .catch(() => {});
   });
