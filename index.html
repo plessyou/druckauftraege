@@ -21,6 +21,7 @@
     --schatten:0 1px 2px rgba(35,38,43,.06), 0 6px 18px rgba(35,38,43,.07);
   }
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   html,body{margin:0;padding:0}
   body{
     background:var(--stoff); color:var(--tinte);
@@ -1105,9 +1106,14 @@ function renderSpeicherBand(){
   const band = $("speicherBand");
   if(!band) return;
   const text = speicherFehler;
+  if(!text){
+    band.hidden = true;
+    band.textContent = "";
+    return;
+  }
   band.innerHTML = '<span aria-hidden="true">⚠</span><span>' + esc(text) +
     '</span><span class="pfeil" aria-hidden="true">›</span>';
-  band.hidden = !text;
+  band.hidden = false;
 }
 function renderTabs(){
   const knapp = knappePosten().length;
@@ -2261,6 +2267,12 @@ function migrieren(){
 })();
 
 if("serviceWorker" in navigator && location.protocol !== "file:"){
+  let serviceWorkerNeustart = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if(serviceWorkerNeustart) return;
+    serviceWorkerNeustart = true;
+    location.reload();
+  });
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
   });

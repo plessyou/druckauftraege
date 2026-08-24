@@ -14,6 +14,7 @@ Eine installierbare Web-App für Aufträge, Deadlines, Bezahlung und Textilbesta
 - IndexedDB ist jetzt der Hauptspeicher. Das ist für Fotos und größere Datenmengen geeigneter als `localStorage`.
 - Vorhandene Daten aus der bisherigen Version werden weiterhin gelesen und automatisch in IndexedDB übernommen.
 - Die Warnung „Tippen für Details“ erscheint nicht mehr beim Start.
+- Versteckte Elemente werden mit einer zwingenden CSS-Regel wirklich ausgeblendet. Dadurch kann das leere rote Warnband nicht mehr sichtbar bleiben.
 - Speicherdiagnosen stehen unter **Daten**. Eine Warnung auf der Startseite erscheint nur nach einem echten fehlgeschlagenen Speichervorgang.
 - Ein Service Worker hält die App nach dem ersten erfolgreichen Laden auch offline verfügbar.
 
@@ -22,4 +23,4 @@ Eine installierbare Web-App für Aufträge, Deadlines, Bezahlung und Textilbesta
 - GitHub speichert nur den App-Code. Aufträge und Fotos liegen weiterhin lokal im Browser oder in der installierten App.
 - Vor einem Gerätewechsel unter **Daten → Sicherung speichern** exportieren und auf dem neuen Gerät wieder laden.
 - Die App muss über HTTPS geöffnet werden. GitHub Pages stellt HTTPS automatisch bereit.
-- Nach einem Update kann einmaliges Neuladen nötig sein, damit der neue Offline-Cache aktiv wird.
+- Nach einem Update aktiviert die App den neuen Offline-Cache automatisch und lädt sich einmal neu.
