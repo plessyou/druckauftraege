@@ -309,7 +309,6 @@
   <p class="unterzeile" id="zusammenfassung">&nbsp;</p>
 </header>
 <div class="laufstich" aria-hidden="true"></div>
-<button class="speicherband" id="speicherBand" hidden></button>
 <input type="file" id="fImport" accept="application/json,.json" hidden>
 
 <!-- ── Ansicht: Aufträge ── -->
@@ -2274,7 +2273,9 @@ if("serviceWorker" in navigator && location.protocol !== "file:"){
     location.reload();
   });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    navigator.serviceWorker.register("./service-worker.js?v=3", { updateViaCache:"none" })
+      .then(registrierung => registrierung.update())
+      .catch(() => {});
   });
 }
 </script>
