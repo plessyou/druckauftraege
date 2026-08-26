@@ -1,4 +1,4 @@
-const CACHE_NAME = "siebdruckauftraege-v4";
+const CACHE_NAME = "siebdruckauftraege-v7";
 const APP_SHELL = [
   "./",
   "./index.html",

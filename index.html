@@ -626,16 +626,25 @@ const FARBKARTEN = [
     ["Eco Heather","#cfcabb"],["Heather Haze","#d8d2c8"],["Misty Grey","#b9b7b2"],
     ["India Ink Grey","#4a4a4d"],["Anthracite","#3a3a3c"]
   ]},
-  { marke:"EarthPositive EP01", farben:[
-    ["White","#ffffff"],["Ecru","#e6dfcf"],["Black","#1b1b1b"],["Ash Black","#33322f"],
-    ["Light Charcoal","#4b4b4b"],["Dark Grey","#545454"],["Dark Heather","#4f5257"],
-    ["Melange Grey","#b0b0ac"],["Light Grey","#d3d3cf"],["Navy Blue","#26304a"],
-    ["Denim Blue","#3f5a7d"],["Faded Denim","#7b95ad"],["Bright Blue","#1e63ad"],
-    ["Aqua Marine","#56b7ad"],["Bottle Green","#17493a"],["Moss Green","#4e6b46"],
-    ["Leaf Green","#6f9e52"],["Burgundy","#6b2231"],["Dark Red","#8c2a2a"],["Red","#c62128"],
-    ["Bright Pink","#e0568f"],["Misty Pink","#edc6c8"],["Sweet Lilac","#cbbcdc"],
-    ["Buttercup Yellow","#f3cf4a"],["Pale Lemon","#f2e9a0"],["Mango","#ef9036"]
+  { marke:"EarthPositive EP185", farben:[
+    ["White","#ffffff"],["Faded White","#f6f5f4"],["RFD (Ready for Dye)","#dddad5"],
+    ["Bone","#c7bcb7"],["Light Beige (Sand)","#cec3af"],["Light Olive (Pistachio)","#bbb79e"],
+    ["Sport Grey","#969b9f"],["Light Heather","#928b93"],["Dark Heather","#6b6a6a"],
+    ["Faded Purple Haze","#a5afb8"],["Blue Dusk","#809ca8"],["Denim Blue","#5d739c"],
+    ["Faded Navy","#454955"],["French Navy","#26273b"],["Forest Green","#53543f"],
+    ["Faded Khaki","#797054"],["Faded Mustard","#946f3a"],["Faded Brown","#675342"],
+    ["Brown","#482f2f"],["Cherry Red","#6c1d23"],["Faded Pink","#b08d92"],
+    ["Miami Pink (Purple Rose)","#c4aab3"],["Faded Black","#212322"],["Black","#111021"]
   ]}
+];
+/* Ältere EarthPositive-Namen (EP01) – stehen nicht mehr in der Auswahl,
+   bekommen aber weiterhin ihr Kästchen, falls sie schon eingetragen sind. */
+const FARB_WEITERE = [
+  ["Ecru","#e6dfcf"],["Ash Black","#33322f"],["Light Charcoal","#4b4b4b"],["Dark Grey","#545454"],
+  ["Melange Grey","#b0b0ac"],["Light Grey","#d3d3cf"],["Navy Blue","#26304a"],["Faded Denim","#7b95ad"],
+  ["Aqua Marine","#56b7ad"],["Bottle Green","#17493a"],["Moss Green","#4e6b46"],["Leaf Green","#6f9e52"],
+  ["Dark Red","#8c2a2a"],["Bright Pink","#e0568f"],["Misty Pink","#edc6c8"],["Sweet Lilac","#cbbcdc"],
+  ["Buttercup Yellow","#f3cf4a"],["Pale Lemon","#f2e9a0"],["Mango","#ef9036"]
 ];
 /* deutsche Schreibweisen, damit ältere Einträge auch einen Punkt bekommen */
 const FARB_ALIAS = {
@@ -652,6 +661,7 @@ const FARB_ALIAS = {
 const FARB_HEX = (function(){
   const m = {};
   for(const f of BASIS_FARBEN) m[f[0].toLowerCase()] = f[1];
+  for(const f of FARB_WEITERE) if(!m[f[0].toLowerCase()]) m[f[0].toLowerCase()] = f[1];
   for(const karte of FARBKARTEN)
     for(const f of karte.farben){
       const k = f[0].trim().toLowerCase();
@@ -687,7 +697,7 @@ const OHNE = "Ohne Ordner";
    und übernimmt vorhandene Daten aus älteren Versionen automatisch. */
 const DB_NAME = "siebdruckauftraege";
 const DB_STORE = "daten";
-let appSpeicher = false, browserSpeicher = false;
+let appSpeicher = false, browserSpeicher = false, vorschauSpeicher = false;
 let meldungApp = "", meldungBrowser = "";
 let idbVerbindung = null;
 const merker = new Map();
@@ -706,10 +716,20 @@ function idbOeffnen(){
     };
     anfrage.onerror = () => reject(anfrage.error || new Error("IndexedDB konnte nicht geöffnet werden"));
     anfrage.onblocked = () => reject(new Error("IndexedDB ist durch ein anderes Fenster blockiert"));
-  });
+  }).catch(e => { idbVerbindung = null; throw e; });   /* kaputte Verbindung nicht merken */
   return idbVerbindung;
 }
-async function idbAktion(modus, ausfuehren){
+async function idbAktion(modus, ausfuehren, wiederholung){
+  try{
+    return await idbVersuch(modus, ausfuehren);
+  }catch(e){
+    /* iOS schließt die Verbindung gern im Hintergrund – einmal neu aufbauen und nochmal */
+    if(wiederholung) throw e;
+    idbVerbindung = null;
+    return idbAktion(modus, ausfuehren, true);
+  }
+}
+async function idbVersuch(modus, ausfuehren){
   const db = await idbOeffnen();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, modus);
@@ -746,6 +766,15 @@ async function speicherPruefen(){
     browserSpeicher = false;
     meldungBrowser = rohText(e);
   }
+  /* In der Claude-Vorschau sind IndexedDB und Browser-Speicher gesperrt – dort greift diese Ablage */
+  if(typeof window.storage !== "undefined" && window.storage){
+    try{
+      await window.storage.set(probe, "1", false);
+      const zurueck = await window.storage.get(probe, false);
+      if(zurueck && zurueck.value === "1") vorschauSpeicher = true;
+      await window.storage.delete(probe, false);
+    }catch(e){ vorschauSpeicher = false; }
+  }
   if(navigator.storage && navigator.storage.persist){
     navigator.storage.persist().catch(() => {});
   }
@@ -758,6 +787,7 @@ function speicherOrt(){
   if(appSpeicher && browserSpeicher) return "Gerätespeicher mit kompatibler Sicherung";
   if(appSpeicher) return "Gerätespeicher (IndexedDB)";
   if(browserSpeicher) return "Browser-Speicher dieses Geräts";
+  if(vorschauSpeicher) return "Speicher der Claude-Vorschau";
   return "nur bis zum Schließen dieses Fensters";
 }
 function entpacken(text){
@@ -781,6 +811,12 @@ async function spLies(key){
       if(v) gefunden.push({ ...entpacken(v), roh:v, quelle:"indexedDB" });
     }catch(e){ appSpeicher = false; meldungApp = rohText(e); }
   }
+  if(vorschauSpeicher){
+    try{
+      const r = await window.storage.get(key, false);
+      if(r && r.value) gefunden.push({ ...entpacken(r.value), roh:r.value, quelle:"vorschau" });
+    }catch(e){}
+  }
   if(merker.has(key)){
     try{
       const v = merker.get(key);
@@ -795,11 +831,24 @@ async function spLies(key){
   }
   return neueste.d;
 }
+/* Nach einem Ausfall bei jedem Schreibversuch neu anklopfen, statt für immer aufzugeben */
+async function idbNochmalPruefen(){
+  if(appSpeicher || !window.indexedDB) return appSpeicher;
+  idbVerbindung = null;
+  try{
+    await idbSchreib("druck-probe", "1");
+    await idbLoesch("druck-probe");
+    appSpeicher = true;
+    meldungApp = "";
+  }catch(e){ meldungApp = rohText(e); }
+  return appSpeicher;
+}
 async function spSchreib(key, wert){
   const text = JSON.stringify({ z:Date.now(), d:wert });
   merker.set(key, text);
   let geschafft = false;
   const fehler = [];
+  await idbNochmalPruefen();
   if(appSpeicher){
     try{
       await idbSchreib(key, text);
@@ -809,6 +858,9 @@ async function spSchreib(key, wert){
       meldungApp = rohText(e);
       fehler.push(e);
     }
+  }
+  if(vorschauSpeicher){
+    try{ await window.storage.set(key, text, false); geschafft = true; }catch(e){ fehler.push(e); }
   }
   if(browserSpeicher){
     try{
@@ -826,6 +878,7 @@ async function spLoesch(key){
   merker.delete(key);
   if(browserSpeicher){ try{ localStorage.removeItem(key); }catch(e){} }
   if(appSpeicher){ try{ await idbLoesch(key); }catch(e){} }
+  if(vorschauSpeicher){ try{ await window.storage.delete(key, false); }catch(e){} }
 }
 
 /* Gebündeltes Schreiben: schnelle Serien (± am Bestand) werden zusammengefasst,
@@ -1290,6 +1343,8 @@ function renderFarbKnoepfe(){
 function farbListeFuellen(){
   const aus = [];
   for(const p of bestand) if(p.farbe && aus.indexOf(p.farbe) === -1) aus.push(p.farbe);
+  for(const karte of FARBKARTEN)
+    for(const f of karte.farben) if(aus.indexOf(f[0]) === -1) aus.push(f[0]);
   for(const f of BASIS_FARBEN.map(x => x[0])) if(aus.indexOf(f) === -1) aus.push(f);
   datalistFuellen("farbListe", aus);
 }
@@ -1549,7 +1604,7 @@ function renderBlatt(){
     const fotoN = auftraege.reduce((s,a) => s + (a.fotoAnzahl || 0), 0);
     const belegt = speicherBelegt();
     const alteFotos = auftraege.filter(a => a.fotoAnzahl && istErledigt(a)).length;
-    const notbetrieb = !appSpeicher && !browserSpeicher;
+    const notbetrieb = !appSpeicher && !browserSpeicher && !vorschauSpeicher;
     html = (speicherFehler || notbetrieb ? '<div class="speicherband" style="width:100%; margin:0 0 14px">' +
               '<span aria-hidden="true">⚠</span><span>' + esc(speicherFehler ||
               "Dieses Fenster kann nichts dauerhaft speichern. Sichere deine Daten mit dem Knopf unten in eine Datei, " +
@@ -1582,9 +1637,11 @@ function renderBlatt(){
         '" data-fwahl="' + esc(n) + '">' + farbPunktHtml(n) + esc(n) + '</button>').join("") + '</div>';
     const imLager = [];
     for(const p of bestand) if(p.farbe && imLager.indexOf(p.farbe) === -1) imLager.push(p.farbe);
+    const textilFeld = (blattDaten === "fTextilFarbe" || blattDaten === "lFarbe");
     html = '<h3>Farbkarte</h3><p class="klein">Tippen übernimmt die Farbe</p>' +
-      ((blattDaten === "fTextilFarbe" || blattDaten === "lFarbe") ? gruppe("Im Bestand", imLager) : "") +
-      gruppe("Grundfarben", BASIS_FARBEN.map(f => f[0]));
+      (textilFeld ? gruppe("Im Bestand", imLager) : "") +
+      (textilFeld ? FARBKARTEN.map(k => gruppe(k.marke, k.farben.map(f => f[0]))).join("") : "") +
+      gruppe(textilFeld ? "Weitere Grundfarben" : "Grundfarben", BASIS_FARBEN.map(f => f[0]));
   }
   else if(blattModus === "warn"){
     html = '<h3>Erinnerung</h3><p class="klein">Melden, sobald frei nur noch …</p>' +
@@ -2331,7 +2388,7 @@ if("serviceWorker" in navigator && location.protocol !== "file:"){
     location.reload();
   });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js?v=4", { updateViaCache:"none" })
+    navigator.serviceWorker.register("./service-worker.js?v=7", { updateViaCache:"none" })
       .then(registrierung => registrierung.update())
       .catch(() => {});
   });

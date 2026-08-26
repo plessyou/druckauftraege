@@ -17,6 +17,13 @@ Eine installierbare Web-App für Aufträge, Deadlines, Bezahlung und Textilbesta
 - Speicherdiagnosen stehen ausschließlich unter **Daten**.
 - Ein Service Worker hält die App nach dem ersten erfolgreichen Laden auch offline verfügbar.
 
+## Behobener Speicherfehler (v5)
+
+- Scheiterte ein Schreibvorgang in IndexedDB auch nur ein einziges Mal, hat die App die Datenbank für den Rest der Sitzung abgeschaltet und still nur noch im Arbeitsspeicher gehalten. Alles danach ging beim Schließen verloren.
+- IndexedDB-Verbindungen werden jetzt bei einem Abbruch neu aufgebaut und die Aktion einmal wiederholt. Das betrifft besonders installierte Apps auf iOS, die im Hintergrund die Verbindung verlieren.
+- Nach einem Ausfall klopft die App vor jedem Schreibversuch erneut an. Sobald die Datenbank wieder antwortet, wird alles Aufgelaufene nachgeschrieben.
+- Zusätzlich wird der Speicher der Claude-Vorschau unterstützt, damit dieselbe Datei auch dort läuft. Auf GitHub Pages ändert das nichts: dort bleibt IndexedDB die Hauptablage.
+
 ## Auftrags- und Bestandslogik
 
 - Der frühere Status **Übergeben** heißt jetzt **Erledigt**. Erledigte Aufträge liegen im Ordner **✓ Erledigt** und zählen nicht mehr zu den aktiven Aufträgen.
@@ -24,7 +31,8 @@ Eine installierbare Web-App für Aufträge, Deadlines, Bezahlung und Textilbesta
 - Bei einem Auftrag zeigen die Größen Grün für verfügbar, Orange für zu knapp und Rot für nicht verfügbar.
 - Unisex und Frauenschnitt wurden entfernt. Bestehende getrennte Bestände werden automatisch zusammengeführt.
 - Mehrere Platzierungen können gleichzeitig ausgewählt werden, zum Beispiel **Brust links** und **Rücken groß**.
-- Eine einfache Grundfarbenkarte ist beim Bestand, bei der Textilfarbe und bei beiden Druckfarben verfügbar.
+- Bei der Textilfarbe stehen die vollständigen Markenkarten zur Auswahl: Stanley/Stella Creator 2.0 (55 Farben) und EarthPositive EP185 (24 Farben, direkt aus dem Farbfächer abgenommen), dazu die Grundfarben für andere Marken. Bei den Druckfarben bleiben es die Grundfarben.
+- Die Hex-Werte sind an die Stoffmuster angeglichen und stehen als eine Liste (`FARBKARTEN`) oben in der Datei, falls einzelne Töne nachjustiert werden sollen.
 
 ## Wichtige Hinweise
 
