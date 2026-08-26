@@ -1,10 +1,13 @@
-const CACHE_NAME = "siebdruckauftraege-v7";
+const CACHE_NAME = "siebdruckauftraege-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./manifest.json",
   "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./apple-touch-icon.png",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-512-maskable.png"
 ];
 
 self.addEventListener("install", event => {
